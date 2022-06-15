@@ -30,6 +30,9 @@ LRESULT WindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 	return DefWindowProc(hwnd, msg, wparam, lparam);
 }
 
+D3D12_FILL_MODE fillMode = D3D12_FILL_MODE_SOLID;
+int verticesSize = 3;
+
 // Windowsアプリでのエントリーポイント（main関数）
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 {
@@ -281,20 +284,28 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 			OutputDebugStringA("Hit 0\n");
 		}
 
-		//FLOAT clearColor[] = { 0.1f,0.25f, 0.5f,0.0f }; // 青っぽい色
+		// 背景色
+		FLOAT clearColor[] = { 0.1f,0.25f, 0.5f,0.0f }; // 青っぽい色
 
-		//// --スペースキーが押されていたら-- //
-		//if (input->PushKey(DIK_SPACE))
-		//{
-		//	clearColor[0] = 1.0f;
-		//}
+		// --スペースキーが押されていたら-- //
+		if (input->PushKey(DIK_SPACE))
+		{
+			clearColor[0] = 1.0f;
+			clearColor[1] = 0.0f;
+			clearColor[2] = 0.75f;
+		}
 
-		//D3D12_FILL_MODE fillMode = D3D12_FILL_MODE_SOLID;
+		if (input->TriggerKey(DIK_1))
+		{
+			if      (verticesSize == 3) verticesSize = 6;
+			else if (verticesSize == 6) verticesSize = 3;
+		}
 
-		//if (input->PushKey(DIK_SPACE))
-		//{
-		//	fillMode = D3D12_FILL_MODE_WIREFRAME;
-		//}
+		if (input->TriggerKey(DIK_2))
+		{
+			if      (fillMode == D3D12_FILL_MODE_WIREFRAME) fillMode = D3D12_FILL_MODE_SOLID;
+			else if (fillMode == D3D12_FILL_MODE_SOLID) fillMode = D3D12_FILL_MODE_WIREFRAME;
+		}
 
 		// --バックバッファの番号を取得(2つなので0番か1番)-- //
 		UINT bbIndex = swapChain->GetCurrentBackBufferIndex();
@@ -313,7 +324,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		commandList->OMSetRenderTargets(1, &rtvHandle, false, nullptr);
 
 		// --3.画面クリア R G B A-- //
-		FLOAT clearColor[] = { 0.1f,0.25f, 0.5f,0.0f }; // 青っぽい色
 		commandList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
 
 		// --4.描画コマンド-- //
@@ -322,6 +332,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		XMFLOAT3 vertices[] = {
 		{ -0.5f, -0.5f, 0.0f }, // 左下
 		{ -0.5f, +0.5f, 0.0f }, // 左上
+		{ +0.5f, -0.5f, 0.0f }, // 右下
+
+		{ -0.5f, +0.5f, 0.0f }, // 左上
+		{ +0.5f, +0.5f, 0.0f }, // 右上
 		{ +0.5f, -0.5f, 0.0f }, // 右下
 		};
 
@@ -460,7 +474,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 
 		// --ラスタライザの設定-- //
 		pipelineDesc.RasterizerState.CullMode = D3D12_CULL_MODE_NONE; // カリングしない
-		pipelineDesc.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID; // ポリゴン内塗りつぶし
+		pipelineDesc.RasterizerState.FillMode = fillMode; // ポリゴン内塗りつぶし
 		pipelineDesc.RasterizerState.DepthClipEnable = true; // 深度クリッピングを有効に
 
 		// --ブレンドステート-- //
@@ -504,10 +518,20 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		result = device->CreateGraphicsPipelineState(&pipelineDesc, IID_PPV_ARGS(&pipelineState));
 		assert(SUCCEEDED(result));
 
-		// --ビューポート設定コマンド-- //
+		// --パイプラインステートとルートシグネチャの設定コマンド-- //
+		commandList->SetPipelineState(pipelineState);
+		commandList->SetGraphicsRootSignature(rootSignature);
+
+		// --プリミティブ形状の設定コマンド-- //
+		commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST); // 三角形リスト
+
+				// --頂点バッファビューの設定コマンド-- //
+		commandList->IASetVertexBuffers(0, 1, &vbView);
+
+		// --左上のビューポート設定コマンド-- //
 		D3D12_VIEWPORT viewport{};
-		viewport.Width = window_width;
-		viewport.Height = window_height;
+		viewport.Width = window_width / 4 * 3;
+		viewport.Height = window_height / 3 * 2;
 		viewport.TopLeftX = 0;
 		viewport.TopLeftY = 0;
 		viewport.MinDepth = 0.0f;
@@ -516,28 +540,61 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		// --ビューポート設定コマンドを、コマンドリストに積む-- //
 		commandList->RSSetViewports(1, &viewport);
 
+		// --描画コマンド-- //
+		commandList->DrawInstanced(verticesSize, 1, 0, 0); // 全ての頂点を使って描画
+
+
+		// --右上のビューポート設定コマンド-- //
+		viewport.Width = window_width / 4;
+		viewport.Height = window_height / 3 * 2;
+		viewport.TopLeftX = window_width / 4 * 3;
+		viewport.TopLeftY = 0;
+		viewport.MinDepth = 0.0f;
+		viewport.MaxDepth = 1.0f;
+
+		// --ビューポート設定コマンドを、コマンドリストに積む-- //
+		commandList->RSSetViewports(1, &viewport);
+
+		// --描画コマンド-- //
+		commandList->DrawInstanced(verticesSize, 1, 0, 0); // 全ての頂点を使って描画
+
+		// --左下のビューポート設定コマンド-- //
+		viewport.Width = window_width / 4 * 3;
+		viewport.Height = window_height / 3;
+		viewport.TopLeftX = 0;
+		viewport.TopLeftY = window_height / 3 * 2;
+		viewport.MinDepth = 0.0f;
+		viewport.MaxDepth = 1.0f;
+
+		// --ビューポート設定コマンドを、コマンドリストに積む-- //
+		commandList->RSSetViewports(1, &viewport);
+
+		// --描画コマンド-- //
+		commandList->DrawInstanced(verticesSize, 1, 0, 0); // 全ての頂点を使って描画
+
+		// --右下のビューポート設定コマンド-- //
+		viewport.Width = window_width / 4;
+		viewport.Height = window_height / 3;
+		viewport.TopLeftX = window_width / 4 * 3;
+		viewport.TopLeftY = window_height / 3 * 2;
+		viewport.MinDepth = 0.0f;
+		viewport.MaxDepth = 1.0f;
+
+		// --ビューポート設定コマンドを、コマンドリストに積む-- //
+		commandList->RSSetViewports(1, &viewport);
+
+		// --描画コマンド-- //
+		commandList->DrawInstanced(verticesSize, 1, 0, 0); // 全ての頂点を使って描画
+
 		// --シザー矩形-- //
 		D3D12_RECT scissorRect{};
 		scissorRect.left = 0; // 切り抜き座標左
 		scissorRect.right = scissorRect.left + window_width; // 切り抜き座標右
 		scissorRect.top = 0; // 切り抜き座標上
 		scissorRect.bottom = scissorRect.top + window_height; // 切り抜き座標下
-		
+
 		// --シザー矩形設定コマンドを、コマンドリストに積む-- //
 		commandList->RSSetScissorRects(1, &scissorRect);
-
-		// --パイプラインステートとルートシグネチャの設定コマンド-- //
-		commandList->SetPipelineState(pipelineState);
-		commandList->SetGraphicsRootSignature(rootSignature);
-
-		// --プリミティブ形状の設定コマンド-- //
-		commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST); // 三角形リスト
-
-		// --頂点バッファビューの設定コマンド-- //
-		commandList->IASetVertexBuffers(0, 1, &vbView);
-
-		// --描画コマンド-- //
-		commandList->DrawInstanced(_countof(vertices), 1, 0, 0); // 全ての頂点を使って描画
 
 		// --5.リソースバリアを戻す-- //
 		barrierDesc.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET; // 描画状態から
