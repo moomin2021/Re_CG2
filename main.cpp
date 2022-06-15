@@ -281,13 +281,20 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 			OutputDebugStringA("Hit 0\n");
 		}
 
-		FLOAT clearColor[] = { 0.1f,0.25f, 0.5f,0.0f }; // 青っぽい色
+		//FLOAT clearColor[] = { 0.1f,0.25f, 0.5f,0.0f }; // 青っぽい色
 
-		// --スペースキーが押されていたら-- //
-		if (input->PushKey(DIK_SPACE))
-		{
-			clearColor[0] = 1.0f;
-		}
+		//// --スペースキーが押されていたら-- //
+		//if (input->PushKey(DIK_SPACE))
+		//{
+		//	clearColor[0] = 1.0f;
+		//}
+
+		//D3D12_FILL_MODE fillMode = D3D12_FILL_MODE_SOLID;
+
+		//if (input->PushKey(DIK_SPACE))
+		//{
+		//	fillMode = D3D12_FILL_MODE_WIREFRAME;
+		//}
 
 		// --バックバッファの番号を取得(2つなので0番か1番)-- //
 		UINT bbIndex = swapChain->GetCurrentBackBufferIndex();
@@ -306,6 +313,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		commandList->OMSetRenderTargets(1, &rtvHandle, false, nullptr);
 
 		// --3.画面クリア R G B A-- //
+		FLOAT clearColor[] = { 0.1f,0.25f, 0.5f,0.0f }; // 青っぽい色
 		commandList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
 
 		// --4.描画コマンド-- //
