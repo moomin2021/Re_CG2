@@ -261,6 +261,13 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		XMFLOAT4 color;
 	};
 
+	// -- 頂点データ構造体-- //
+	struct Vertex
+	{
+		XMFLOAT3 pos;// -> xyz座標
+		XMFLOAT2 uv;// -> uv座標
+	};
+
 	// --ヒープ設定-- //
 	D3D12_HEAP_PROPERTIES cbHeapProp{};
 	cbHeapProp.Type = D3D12_HEAP_TYPE_UPLOAD;// -> GPUへの転送用
@@ -297,11 +304,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	constMapMaterial->color = XMFLOAT4(1, 1, 1, 1.0f);// -> RGBAで半透明の赤
 
 	// --頂点データ-- //
-	XMFLOAT3 vertices[] = {
-		{ -0.5f, -0.5f, 0.0f }, // 左下
-		{ -0.5f, +0.5f, 0.0f }, // 左上
-		{ +0.5f, -0.5f, 0.0f }, // 右下
-		{ +0.5f, +0.5f, 0.0f }, // 右上
+	Vertex vertices[] = {
+		{{-0.4f, -0.7f, 0.0f}, {0.0f, 1.0f}},// -> 左下
+		{{-0.4f, +0.7f, 0.0f}, {0.0f, 0.0f}},// -> 左上
+		{{+0.4f, -0.7f, 0.0f}, {1.0f, 1.0f}},// -> 右下
+		{{+0.4f, +0.7f, 0.0f}, {1.0f, 0.0f}},// -> 右上
 	};
 
 	uint16_t indices[] = {
@@ -310,7 +317,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	};
 
 	// --頂点データ全体のサイズ = 頂点データ一つ分のサイズ * 頂点データの要素数-- //
-	UINT sizeVB = static_cast<UINT>(sizeof(XMFLOAT3) * _countof(vertices));
+	UINT sizeVB = static_cast<UINT>(sizeof(vertices[0]) * _countof(vertices));
 
 	// --頂点バッファの設定-- //
 	D3D12_HEAP_PROPERTIES heapProp{}; // ヒープ設定
@@ -338,7 +345,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	assert(SUCCEEDED(result));
 
 	// --GPU上のバッファに対応した仮想メモリ(メインメモリ上)を取得-- //
-	XMFLOAT3 * vertMap = nullptr;
+	Vertex * vertMap = nullptr;
 	result = vertBuff->Map(0, nullptr, (void **)&vertMap);
 	assert(SUCCEEDED(result));
 
@@ -361,7 +368,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	vbView.SizeInBytes = sizeVB;
 
 	// --頂点1つ分のデータサイズ-- //
-	vbView.StrideInBytes = sizeof(XMFLOAT3);
+	vbView.StrideInBytes = sizeof(vertices[0]);
 
 	ID3DBlob * vsBlob = nullptr; // 頂点シェーダオブジェクト
 	ID3DBlob * psBlob = nullptr; // ピクセルシェーダオブジェクト
@@ -423,6 +430,16 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 			"POSITION",// -> セマンティック名
 			0,// -> 同じセマンティック名が複数あるときに使うインデックス（0でよい）
 			DXGI_FORMAT_R32G32B32_FLOAT,// -> 要素数とビット数を表す（XYZの3つでfloat型なのでR32G32B32_FLOAT）
+			0,// -> 入力スロットインデックス（0でよい）
+			D3D12_APPEND_ALIGNED_ELEMENT,// -> データのオフセット値（D3D12_APPEND_ALIGNED_ELEMENTだと自動設定）
+			D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA,// -> 入力データの種別（標準はD3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA）
+			0// -> 一度に描画するインスタンス数（0でよい）
+		},
+
+		{
+			"TEXCOORD",// -> セマンティック名
+			0,// -> 同じセマンティック名が複数あるときに使うインデックス（0でよい）
+			DXGI_FORMAT_R32G32_FLOAT,// -> 要素数とビット数を表す（XYZの3つでfloat型なのでR32G32B32_FLOAT）
 			0,// -> 入力スロットインデックス（0でよい）
 			D3D12_APPEND_ALIGNED_ELEMENT,// -> データのオフセット値（D3D12_APPEND_ALIGNED_ELEMENTだと自動設定）
 			D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA,// -> 入力データの種別（標準はD3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA）

@@ -1,4 +1,10 @@
-float4 main( float4 pos : POSITION ) : SV_POSITION
+#include "Basic.hlsli"
+
+VSOutput main(float4 pos : POSITION, float2 uv:TEXCOORD)
 {
-	return pos/* * float4(1.0f, 1.0f, 0, 0)*/;
+	// ピクセルシェーダーに渡す値
+	VSOutput output;
+	output.svpos = pos;
+	output.uv = uv;
+	return output;
 }
