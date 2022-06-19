@@ -13,6 +13,8 @@ using namespace DirectX;
 #pragma comment(lib, "d3d12.lib")
 #pragma comment(lib, "dxgi.lib")
 
+#include <DirectXteX.h>
+
 // ウィンドウプロシージャ（システムメッセージを処理するための関数）
 LRESULT WindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 {
@@ -303,26 +305,54 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	// 値を書き込むと自動的に転送される
 	constMapMaterial->color = XMFLOAT4(1, 1, 1, 1.0f);// -> RGBAで半透明の赤
 
-	// --横方向ピクセル数-- //
-	const size_t textureWidth = 256;
+	//// --横方向ピクセル数-- //
+	//const size_t textureWidth = 256;
 
-	// --縦方向ピクセル数-- //
-	const size_t textureHeight = 256;
+	//// --縦方向ピクセル数-- //
+	//const size_t textureHeight = 256;
 
-	// --配列の要素数-- //
-	const size_t imageDataConst = textureWidth * textureHeight;
+	//// --配列の要素数-- //
+	//const size_t imageDataConst = textureWidth * textureHeight;
 
-	// --画像イメージデータ配列-- //
-	XMFLOAT4 * imageData = new XMFLOAT4[imageDataConst];// -> 必ず後で解放する
+	//// --画像イメージデータ配列-- //
+	//XMFLOAT4 * imageData = new XMFLOAT4[imageDataConst];// -> 必ず後で解放する
 
-	// --全ピクセルの色を初期化-- //
-	for (size_t i = 0; i < imageDataConst; i++)
-	{
-		imageData[i].x = 1.0f;// -> R
-		imageData[i].y = 0.0f;// -> G
-		imageData[i].z = 0.0f;// -> B
-		imageData[i].w = 1.0f;// -> A
-	}
+	//// --全ピクセルの色を初期化-- //
+	//for (size_t i = 0; i < imageDataConst; i++)
+	//{
+	//	imageData[i].x = 1.0f;// -> R
+	//	imageData[i].y = 0.0f;// -> G
+	//	imageData[i].z = 0.0f;// -> B
+	//	imageData[i].w = 1.0f;// -> A
+	//}
+
+	//// --元データ解放-- //
+	//delete[] imageData;
+
+	TexMetadata metadata{};
+	ScratchImage scratchImg{};
+
+	// --WICテクスチャのロード-- //
+	result = LoadFromWICFile(
+		L"Resources/texture.png",
+		WIC_FLAGS_NONE,
+		&metadata, scratchImg
+	);
+
+	ScratchImage mipChain{};
+
+	// --ミップマップ生成-- //
+	result = GenerateMipMaps(
+		scratchImg.GetImages(),
+		scratchImg.GetImageCount(),
+		scratchImg.GetMetadata(),
+		TEX_FILTER_DEFAULT,
+		0,
+		mipChain
+	);
+
+	// --読み込んだディフューズテクスチャをSRGBとして扱う-- //
+	metadata.format = MakeSRGB(metadata.format);
 
 	// --ヒープ設定-- //
 	D3D12_HEAP_PROPERTIES textureHeapProp{};
@@ -333,11 +363,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	// --リソース設定-- //
 	D3D12_RESOURCE_DESC textureResourceDesc{};
 	textureResourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
-	textureResourceDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
-	textureResourceDesc.Width = textureWidth;
-	textureResourceDesc.Height = textureHeight;
-	textureResourceDesc.DepthOrArraySize = 1;
-	textureResourceDesc.MipLevels = 1;
+	textureResourceDesc.Format = metadata.format;
+	textureResourceDesc.Width = metadata.width;
+	textureResourceDesc.Height = (UINT)metadata.height;
+	textureResourceDesc.DepthOrArraySize = (UINT16)metadata.arraySize;
+	textureResourceDesc.MipLevels = (UINT16)metadata.mipLevels;
 	textureResourceDesc.SampleDesc.Count = 1;
 
 	// --テクスチャバッファの生成-- //
@@ -351,17 +381,22 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		IID_PPV_ARGS(&texBuff)
 	);
 
-	// --テクスチャバッファにデータ転送-- //
-	result = texBuff->WriteToSubresource(
-		0,
-		nullptr,// -> 全領域へコピー
-		imageData,// -> 元データアドレス
-		sizeof(XMFLOAT4) * textureWidth,// -> 1ラインサイズ
-		sizeof(XMFLOAT4) * imageDataConst// -> 全サイズ
-	);
+	// --全ミップマップについて-- //
+	for (size_t i = 0; i < metadata.mipLevels; i++)
+	{
+		// ミップマップレベルを指定してイメージを取得
+		const Image * img = scratchImg.GetImage(i, 0, 0);
 
-	// --元データ解放-- //
-	delete[] imageData;
+		// テクスチャバッファにデータ転送
+		result = texBuff->WriteToSubresource(
+			(UINT)i,
+			nullptr,// --------------> 全領域へコピー
+			img->pixels,// ----------> 元データアドレス
+			(UINT)img->rowPitch,// --> 1ラインサイズ
+			(UINT)img->slicePitch// -> 1枚サイズ
+		);
+		assert(SUCCEEDED(result));
+	}
 
 	// --SRVの最大個数-- //
 	const size_t kMaxSRVCount = 2056;
@@ -382,10 +417,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 
 	// --シェーダリソースビュー設定-- //
 	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc{};
-	srvDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+	srvDesc.Format = textureResourceDesc.Format;
 	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
-	srvDesc.Texture2D.MipLevels = 1;
+	srvDesc.Texture2D.MipLevels = textureResourceDesc.MipLevels;
 
 	// --ハンドルの指す①にシェーダーリソースビュー作成-- //
 	device->CreateShaderResourceView(texBuff, &srvDesc, srvHandle);
