@@ -362,10 +362,15 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		0.1f, 1000.0f// ------------------------> 前端、奥端
 	);
 
-	// --次回、ここでビュー変換行列を計算
+	// --ビュー変換行列-- //
+	XMMATRIX matView;
+	XMFLOAT3 eye(0, 0, -100);
+	XMFLOAT3 target(0, 0, 0);
+	XMFLOAT3 up(0, 1, 0);
+	matView = XMMatrixLookAtLH(XMLoadFloat3(&eye), XMLoadFloat3(&target), XMLoadFloat3(&up));
 
 	// --定数バッファに転送-- //
-	constMapTransform->mat = matProjection;
+	constMapTransform->mat = matView * matProjection;
 
 	//// --横方向ピクセル数-- //
 	//const size_t textureWidth = 256;
@@ -508,10 +513,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 
 	// --頂点データ-- //
 	Vertex vertices[] = {
-		{{ -50.0f, -50.0f, 50.0f}, {0.0f, 1.0f}},// -> 左下
-		{{ -50.0f,  50.0f, 50.0f}, {0.0f, 0.0f}},// -> 左上
-		{{  50.0f, -50.0f, 50.0f}, {1.0f, 1.0f}},// -> 右下
-		{{  50.0f,  50.0f, 50.0f}, {1.0f, 0.0f}},// -> 右上
+		{{ -50.0f, -50.0f, 0.0f}, {0.0f, 1.0f}},// -> 左下
+		{{ -50.0f,  50.0f, 0.0f}, {0.0f, 0.0f}},// -> 左上
+		{{  50.0f, -50.0f, 0.0f}, {1.0f, 1.0f}},// -> 右下
+		{{  50.0f,  50.0f, 0.0f}, {1.0f, 0.0f}},// -> 右上
 	};
 
 	uint16_t indices[] = {
@@ -817,6 +822,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 
 #pragma endregion
 
+	// --初期化-- //
+	float angle = 0.0f;
+
 	// --ゲームループ-- //
 	while (true)
 	{
@@ -849,6 +857,21 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 			// 出力ウィンドウに「Hit 0」と表示
 			OutputDebugStringA("Hit 0\n");
 		}
+
+		if (input->PushKey(DIK_D) || input->PushKey(DIK_A))
+		{
+			angle += XMConvertToRadians(input->PushKey(DIK_D) - input->PushKey(DIK_A));
+			//if (input->PushKey(DIK_D)) angle += XMConvertToRadians(1.0f);
+			//else if (input->PushKey(DIK_A)) angle -= XMConvertToRadians(1.0f);
+
+			eye.x = -100 * sinf(angle);
+			eye.z = -100 * cosf(angle);
+
+			matView = XMMatrixLookAtLH(XMLoadFloat3(&eye), XMLoadFloat3(&target), XMLoadFloat3(&up));
+		}
+
+		// --定数バッファに転送-- //
+		constMapTransform->mat = matView * matProjection;
 
 		//FLOAT clearColor[] = { 0.1f,0.25f, 0.5f,0.0f }; // 青っぽい色
 
