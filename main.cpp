@@ -369,8 +369,37 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	XMFLOAT3 up(0, 1, 0);
 	matView = XMMatrixLookAtLH(XMLoadFloat3(&eye), XMLoadFloat3(&target), XMLoadFloat3(&up));
 
+	// --ワールド変換行列-- //
+	XMMATRIX matWorld;
+	matWorld = XMMatrixIdentity();
+
+	// --スケーリング行列
+	XMMATRIX matScale;
+	matScale = XMMatrixScaling(1.0f, 0.5f, 1.0f);
+
+	// ワールド行列にスケーリングを反映
+	matWorld *= matScale;
+
+	// --回転行列
+	XMMATRIX matRot;
+	matRot = XMMatrixIdentity();
+
+	// Z軸まわりに45度回転
+	matRot *= XMMatrixRotationZ(XMConvertToRadians(0.0f));
+	matRot *= XMMatrixRotationX(XMConvertToRadians(15.0f));
+	matRot *= XMMatrixRotationY(XMConvertToRadians(30.0f));
+
+	// ワールド行列に回転を反映
+	matWorld *= matRot;
+
+	// --平行移動行列
+	XMMATRIX matTrans;
+	matTrans = XMMatrixTranslation(-50.0f, 0, 0);
+
+	matWorld *= matTrans;
+
 	// --定数バッファに転送-- //
-	constMapTransform->mat = matView * matProjection;
+	constMapTransform->mat = matWorld * matView * matProjection;
 
 	//// --横方向ピクセル数-- //
 	//const size_t textureWidth = 256;
@@ -825,6 +854,15 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	// --初期化-- //
 	float angle = 0.0f;
 
+	// --スケーリング倍率
+	XMFLOAT3 scale = { 1.0f, 1.0f, 1.0f };
+
+	// --回転角
+	XMFLOAT3 rotation = { 0.0f, 0.0f, 0.0f };
+
+	// --座標
+	XMFLOAT3 position = { 0.0f, 0.0f, 0.0f };
+
 	// --ゲームループ-- //
 	while (true)
 	{
@@ -870,8 +908,48 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 			matView = XMMatrixLookAtLH(XMLoadFloat3(&eye), XMLoadFloat3(&target), XMLoadFloat3(&up));
 		}
 
+		// --いずれかのキーを押していれば
+		if (input->PushKey(DIK_UP) || input->PushKey(DIK_DOWN) || input->PushKey(DIK_RIGHT) || input->PushKey(DIK_LEFT))
+		{
+			// 座標を移動する処理（Z座標）
+			if      (input->PushKey(DIK_UP)) position.z += 1.0f;
+			else if (input->PushKey(DIK_DOWN)) position.z -= 1.0f;
+
+			// 座標を移動する処理（X座標）
+			if      (input->PushKey(DIK_RIGHT)) position.x += 1.0f;
+			else if (input->PushKey(DIK_LEFT)) position.x -= 1.0f;
+		}
+
+		// --ワールド行列に単位行列を代入
+		matWorld = XMMatrixIdentity();
+
+		// --スケーリング行列
+		XMMATRIX matScale;
+		matScale = XMMatrixScaling(scale.x, scale.y, scale.z);
+
+		// --回転行列
+		XMMATRIX matRot;
+		matRot = XMMatrixIdentity();
+
+		// Z軸まわりに45度回転
+		matRot *= XMMatrixRotationZ(XMConvertToRadians(rotation.x));
+		matRot *= XMMatrixRotationX(XMConvertToRadians(rotation.y));
+		matRot *= XMMatrixRotationY(XMConvertToRadians(rotation.z));
+
+		// --平行移動行列
+		XMMATRIX matTrans;
+		matTrans = XMMatrixTranslation(position.x, position.y, position.z);
+
+		// --変形のリセット
+		matWorld = XMMatrixIdentity();
+
+		// --ワールド行列に各要素を反映
+		matWorld *= matScale;
+		matWorld *= matRot;
+		matWorld *= matTrans;
+
 		// --定数バッファに転送-- //
-		constMapTransform->mat = matView * matProjection;
+		constMapTransform->mat = matWorld * matView * matProjection;
 
 		//FLOAT clearColor[] = { 0.1f,0.25f, 0.5f,0.0f }; // 青っぽい色
 
