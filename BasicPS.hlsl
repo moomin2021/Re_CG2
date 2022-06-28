@@ -6,6 +6,6 @@ SamplerState smp : register(s0);// ------> 0番スロットに設定されたサンプラー
 float4 main(VSOutput input) : SV_TARGET
 {
 	// 乗算すると色が変わる
-	//return float4(tex.Sample(smp, input.uv));
-	return float4(1.0f, 1.0f, 1.0f, 1.0f);
+	return float4(tex.Sample(smp, input.uv));
+	//return float4(1.0f, 1.0f, 1.0f, 1.0f);
 }
