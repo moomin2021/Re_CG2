@@ -361,8 +361,13 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		constMapMaterial->color = XMFLOAT4(1, 1, 1, 1.0f);// -> RGBAで半透明の赤
 	}
 
-	ID3D12Resource * constBuffTransform = nullptr;
-	ConstBufferDataTransform * constMapTransform = nullptr;
+	// --定数バッファを生成-- //
+	ID3D12Resource * constBuffTransform0 = nullptr;
+	ConstBufferDataTransform * constMapTransform0 = nullptr;
+
+	ID3D12Resource * constBuffTransform1 = nullptr;
+	ConstBufferDataTransform * constMapTransform1 = nullptr;
+
 
 	{
 		// --ヒープ設定-- //
@@ -386,18 +391,31 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 			&cbResourceDesc,// -> リソース設定
 			D3D12_RESOURCE_STATE_GENERIC_READ,
 			nullptr,
-			IID_PPV_ARGS(&constBuffTransform)
+			IID_PPV_ARGS(&constBuffTransform0)
 		);
 
-		result = constBuffTransform->Map(0, nullptr, (void **)&constMapTransform);
+		result = device->CreateCommittedResource(
+			&cbHeapProp,// -> ヒープ設定
+			D3D12_HEAP_FLAG_NONE,
+			&cbResourceDesc,// -> リソース設定
+			D3D12_RESOURCE_STATE_GENERIC_READ,
+			nullptr,
+			IID_PPV_ARGS(&constBuffTransform1)
+		);
+
+		// --定数バッファのマッピング-- //
+		result = constBuffTransform0->Map(0, nullptr, (void **)&constMapTransform0);
+		assert(SUCCEEDED(result));
+
+		result = constBuffTransform1->Map(0, nullptr, (void **)&constMapTransform1);
 		assert(SUCCEEDED(result));
 	}
 
 	// --単位行列を代入-- //
-	constMapTransform->mat = XMMatrixIdentity();
+	constMapTransform0->mat = XMMatrixIdentity();
 
 	// --平行投影行列の計算-- //
-	constMapTransform->mat = XMMatrixOrthographicOffCenterLH(
+	constMapTransform0->mat = XMMatrixOrthographicOffCenterLH(
 		2.0f / window_width, -1.0f,
 		1.0f, -2.0f / window_height,
 		0.0f, 1.0f
@@ -418,36 +436,51 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	matView = XMMatrixLookAtLH(XMLoadFloat3(&eye), XMLoadFloat3(&target), XMLoadFloat3(&up));
 
 	// --ワールド変換行列-- //
-	XMMATRIX matWorld;
-	matWorld = XMMatrixIdentity();
+	XMMATRIX matWorld0;
+	matWorld0 = XMMatrixIdentity();
 
 	// --スケーリング行列
-	XMMATRIX matScale;
-	matScale = XMMatrixScaling(1.0f, 0.5f, 1.0f);
+	XMMATRIX matScale0;
+	matScale0 = XMMatrixScaling(1.0f, 0.5f, 1.0f);
 
 	// ワールド行列にスケーリングを反映
-	matWorld *= matScale;
+	matWorld0 *= matScale0;
 
 	// --回転行列
-	XMMATRIX matRot;
-	matRot = XMMatrixIdentity();
+	XMMATRIX matRot0;
+	matRot0 = XMMatrixIdentity();
 
 	// Z軸まわりに45度回転
-	matRot *= XMMatrixRotationZ(XMConvertToRadians(0.0f));
-	matRot *= XMMatrixRotationX(XMConvertToRadians(15.0f));
-	matRot *= XMMatrixRotationY(XMConvertToRadians(30.0f));
+	matRot0 *= XMMatrixRotationZ(XMConvertToRadians(0.0f));
+	matRot0 *= XMMatrixRotationX(XMConvertToRadians(15.0f));
+	matRot0 *= XMMatrixRotationY(XMConvertToRadians(30.0f));
 
 	// ワールド行列に回転を反映
-	matWorld *= matRot;
+	matWorld0 *= matRot0;
 
 	// --平行移動行列
-	XMMATRIX matTrans;
-	matTrans = XMMatrixTranslation(-50.0f, 0, 0);
+	XMMATRIX matTrans0;
+	matTrans0 = XMMatrixTranslation(-50.0f, 0, 0);
 
-	matWorld *= matTrans;
+	matWorld0 *= matTrans0;
 
 	// --定数バッファに転送-- //
-	constMapTransform->mat = matWorld * matView * matProjection;
+	constMapTransform0->mat = matWorld0 * matView * matProjection;
+
+	// --ワールド変換行列-- //
+	XMMATRIX matWorld1;
+	matWorld1 = XMMatrixIdentity();
+
+	// --各種変形行列を計算
+	XMMATRIX matScale1 = XMMatrixScaling(1.0f, 1.0f, 1.0f);
+	XMMATRIX matRot1 = XMMatrixRotationY(XM_PI / 4.0f);
+	XMMATRIX matTrans1 = XMMatrixTranslation(-20.0f, 0, 0);
+
+	// --ワールド行列を合成
+	matWorld1 = matScale1 * matRot1 * matTrans1;
+
+	// --ワールド、ビュー、射影行列を合成してシェーダーに転送-- //
+	constMapTransform1->mat = matWorld1 * matView * matProjection;
 
 	//// --横方向ピクセル数-- //
 	//const size_t textureWidth = 256;
@@ -1069,7 +1102,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		}
 
 		// --ワールド行列に単位行列を代入
-		matWorld = XMMatrixIdentity();
+		matWorld0 = XMMatrixIdentity();
 
 		// --スケーリング行列
 		XMMATRIX matScale;
@@ -1089,15 +1122,16 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		matTrans = XMMatrixTranslation(position.x, position.y, position.z);
 
 		// --変形のリセット
-		matWorld = XMMatrixIdentity();
+		matWorld0 = XMMatrixIdentity();
 
 		// --ワールド行列に各要素を反映
-		matWorld *= matScale;
-		matWorld *= matRot;
-		matWorld *= matTrans;
+		matWorld0 *= matScale;
+		matWorld0 *= matRot;
+		matWorld0 *= matTrans;
 
 		// --定数バッファに転送-- //
-		constMapTransform->mat = matWorld * matView * matProjection;
+		constMapTransform0->mat = matWorld0 * matView * matProjection;
+		constMapTransform1->mat = matWorld1 * matView * matProjection;
 
 		//FLOAT clearColor[] = { 0.1f,0.25f, 0.5f,0.0f }; // 青っぽい色
 
@@ -1187,8 +1221,14 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		// --インデックスバッファビューの設定コマンド-- //
 		commandList->IASetIndexBuffer(&ibView);
 
-		// --定数バッファビュー（CBV）の設定コマンド-- //
-		commandList->SetGraphicsRootConstantBufferView(2, constBuffTransform->GetGPUVirtualAddress());
+		// --0番定数バッファビュー（CBV）の設定コマンド-- //
+		commandList->SetGraphicsRootConstantBufferView(2, constBuffTransform0->GetGPUVirtualAddress());
+
+		// --描画コマンド-- //
+		commandList->DrawIndexedInstanced(_countof(indices), 1, 0, 0, 0); // 全ての頂点を使って描画
+
+		// --1番定数バッファビュー（CBV）の設定コマンド-- //
+		commandList->SetGraphicsRootConstantBufferView(2, constBuffTransform1->GetGPUVirtualAddress());
 
 		// --描画コマンド-- //
 		commandList->DrawIndexedInstanced(_countof(indices), 1, 0, 0, 0); // 全ての頂点を使って描画
