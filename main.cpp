@@ -460,11 +460,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	textureHeapProp.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_WRITE_BACK;
 	textureHeapProp.MemoryPoolPreference = D3D12_MEMORY_POOL_L0;
 
-	D3D12_HEAP_PROPERTIES textureHeapProp2{};
-	textureHeapProp2.Type = D3D12_HEAP_TYPE_CUSTOM;
-	textureHeapProp2.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_WRITE_BACK;
-	textureHeapProp2.MemoryPoolPreference = D3D12_MEMORY_POOL_L0;
-
 	// --リソース設定-- //
 	D3D12_RESOURCE_DESC textureResourceDesc{};
 	textureResourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
@@ -498,7 +493,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	// --テクスチャバッファの生成-- //
 	ID3D12Resource* texBuff2 = nullptr;
 	result = dxMa->device->CreateCommittedResource(
-		&textureHeapProp2,
+		&textureHeapProp,
 		D3D12_HEAP_FLAG_NONE,
 		&textureResourceDesc2,
 		D3D12_RESOURCE_STATE_GENERIC_READ,
