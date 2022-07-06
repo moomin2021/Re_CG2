@@ -12,6 +12,16 @@ DXManager::~DXManager() {
 
 // --DirectXの初期化処理-- //
 void DXManager::DXInitialize(HWND hwnd) {
+
+	// --関数が成功したかどうかを判別する用変数-- //
+	// ※DirectXの関数は、HRESULT型で成功したかどうかを返すものが多いのでこの変数を作成 //
+	HRESULT result;
+
+
+	/// --デバックレイヤーの有効か -- ///
+	/// ※Visual Studioの「出力」ウィンドウで追加のエラーメッセージが表示できるように ///
+#pragma region
+
 #ifdef _DEBUG
 	//デバッグレイヤーをオンに
 	ID3D12Debug* debugController;
@@ -21,7 +31,12 @@ void DXManager::DXInitialize(HWND hwnd) {
 	}
 #endif
 
-	HRESULT result;
+#pragma endregion
+	/// --END-- ///
+
+	/// --アダプタの列挙-- ///
+	/// ※PCにあるグラフィックボードを、仮想的なデバイスを含めて全部リストアップする ///
+#pragma region
 
 	// --DXGIファクトリーの生成-- //
 	// DXGI = グラフィックスインフラストラクチャ
@@ -45,6 +60,13 @@ void DXManager::DXInitialize(HWND hwnd) {
 		adapters.push_back(tmpAdapter);
 	}
 
+#pragma endregion
+	/// --END-- ///
+
+	/// --アダプタの選別-- //
+	/// ※検出されたグラフィックスデバイスの中で性能の低いもの除外して、専用デバイスを採用する ///
+#pragma region
+
 	// --妥当なアダプタを選別する-- //
 	for (size_t i = 0; i < adapters.size(); i++)
 	{
@@ -61,6 +83,14 @@ void DXManager::DXInitialize(HWND hwnd) {
 			break;
 		}
 	}
+
+#pragma endregion
+	/// --END-- ///
+
+	/// --デバイスの生成-- ///
+	/// ※採用したグラフィックスデバイスを操作するためにD3D12Deviceオブジェクトを生成 ///
+	/// ※これは普通１ゲームに1つしか作らない ///
+#pragma region
 
 	// --対応レベルの配列-- //
 	D3D_FEATURE_LEVEL levels[] = {
@@ -87,11 +117,20 @@ void DXManager::DXInitialize(HWND hwnd) {
 		}
 	}
 
+#pragma endregion
+	/// --END-- ///
+
+	/// --コマンドリスト-- ///
+	/// ※GPUに、まとめて命令を送るためのコマンドリストを生成する //
+#pragma region
+
 	// --コマンドアロケータを生成-- //
+	// ※コマンドリストはコマンドアロケータから生成するので、先にコマンドアロケータを作る //
+	// ※コマンドリストに格納する命令の為のメモリを管理するオブジェクト //
 	result = device->CreateCommandAllocator(
-		D3D12_COMMAND_LIST_TYPE_DIRECT,
-		IID_PPV_ARGS(&cmdAllocator));
-	assert(SUCCEEDED(result));
+		D3D12_COMMAND_LIST_TYPE_DIRECT,// -> コマンドアロケータの種類
+		IID_PPV_ARGS(&cmdAllocator));// -> 各インターフェイス固有のGUID
+	assert(SUCCEEDED(result));// -> ID3D12CommandAllocatorインターフェイスのポインタを格納する変数アドレス
 
 	// --コマンドリストを生成-- //
 	result = device->CreateCommandList(0,
@@ -100,22 +139,60 @@ void DXManager::DXInitialize(HWND hwnd) {
 		IID_PPV_ARGS(&commandList));
 	assert(SUCCEEDED(result));
 
+#pragma endregion
+	/// --END-- ///
+
+	/// --コマンドキュー-- ///
+	/// ※コマンドリストをGPUに順に実行させていく為の仕組み ///
+#pragma region
+
 	// --コマンドキューの設定-- //
+	// ※{}をつけることで構造体の中身を0でクリアしている。
+	// ※値0が標準値になるようにMicrosoftが決めているので、この場合コマンドキューの設定を標準にしている //
 	D3D12_COMMAND_QUEUE_DESC commandQueueDesc{};
 
 	// --標準設定でコマンドキューを生成-- //
 	result = device->CreateCommandQueue(&commandQueueDesc, IID_PPV_ARGS(&commandQueue));
 	assert(SUCCEEDED(result));
 
+#pragma endregion
+	/// --END-- ///
+
+	/// --スワップチェーン-- ///
+	/// ※スワップチェーンは、ダブルバッファリングやトリプルバッファリングを簡単に実装するための仕組み ///
+	/// ※表示中の画面（フロントバッファ）・描画中の画面（バックバッファ）
+#pragma region
+
 	// --スワップチェーンの設定-- //
 	DXGI_SWAP_CHAIN_DESC1 swapChainDesc{};
+
+	// --画面の幅を指定する
 	swapChainDesc.Width = 1280;
+
+	// --画面の高さを指定する
 	swapChainDesc.Height = 720;
-	swapChainDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM; // 色情報の書式
-	swapChainDesc.SampleDesc.Count = 1; // マルチサンプルしない
-	swapChainDesc.BufferUsage = DXGI_USAGE_BACK_BUFFER; // バックバッファ用
-	swapChainDesc.BufferCount = 2; // バッファ数を2つに設定
-	swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD; // フリップ後は破棄
+
+	// --色情報の書式（表示形式）
+	//※DXGI_FORMAT_R8G8B8A8_UNORMはアルファを含むチャンネルあたり8ビットをサポート
+	swapChainDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	
+	// --ピクセルあたりのマルチサンプルの数を指定する
+	swapChainDesc.SampleDesc.Count = 1;
+
+	// --リソースの使用方法を指定
+	// ※DXGI_USAGE_BACK_BUFFERはリソースをバックバッファとして使用する
+	swapChainDesc.BufferUsage = DXGI_USAGE_BACK_BUFFER;
+
+	// --スワップチェーン内のバッファーの数を指定する
+	swapChainDesc.BufferCount = 2;
+
+	// --画面をスワップした後のリソースの処理方法を指定
+	// ※DXGI_SWAP_EFFECT_FLIP_DISCARDはスワップした後バックバッファーの内容を破棄する設定
+	swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
+
+	// --スワップチェーン動作のオプションを指定
+	// ※DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCHはウィンドウとフルスクリーンの切り替え時に>>
+	// >>解像度がウィンドウサイズに一致するように変更する
 	swapChainDesc.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
 
 	// --スワップチェーンの生成-- //
@@ -124,6 +201,15 @@ void DXManager::DXInitialize(HWND hwnd) {
 		(IDXGISwapChain1**)&swapChain);
 	assert(SUCCEEDED(result));
 
+#pragma endregion
+	/// --END-- ///
+
+	/// --レンダーターゲットビュー-- ///
+	/// ※バックバッファを描画キャンパスとして扱う為のオブジェクト //
+	/// ※ダブルバッファリングではバッファが２つあるので２つ作る //
+#pragma region
+
+	// ※レンダーターゲットビューはデスクリプタヒープに生成するので、先にデスクリプタヒープを作る //
 	// --デスクリプタヒープの設定-- //
 	rtvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV; // レンダーターゲットビュー
 	rtvHeapDesc.NumDescriptors = swapChainDesc.BufferCount; // 裏表の2つ
@@ -131,32 +217,42 @@ void DXManager::DXInitialize(HWND hwnd) {
 	// --デスクリプタヒープの生成-- //
 	device->CreateDescriptorHeap(&rtvHeapDesc, IID_PPV_ARGS(&rtvHeap));
 
+	// ※スワップチェーン内に生成されたバックバッファのアドレスを入れておく
 	// --バックバッファ-- //
 	backBuffers.resize(swapChainDesc.BufferCount);
 
 	// --スワップチェーンの全てのバッファについて処理する-- //
 	for (size_t i = 0; i < backBuffers.size(); i++)
 	{
-		// スワップチェーンからバッファを取得
+		// --スワップチェーンからバッファを取得
 		swapChain->GetBuffer((UINT)i, IID_PPV_ARGS(&backBuffers[i]));
 
-		// デスクリプタヒープのハンドルを取得
+		// --デスクリプタヒープのハンドルを取得
 		D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = rtvHeap->GetCPUDescriptorHandleForHeapStart();
 
-		// 裏か表かでアドレスがずれる
+		// --裏か表かでアドレスがずれる
 		rtvHandle.ptr += i * device->GetDescriptorHandleIncrementSize(rtvHeapDesc.Type);
 
-		// レンダーターゲットビューの設定
+		// --レンダーターゲットビューの設定
 		D3D12_RENDER_TARGET_VIEW_DESC rtvDesc{};
 
-		// シェーダーの計算結果をSRGBに変換して書き込む
+		// --シェーダーの計算結果をSRGBに変換して書き込む
 		rtvDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
 		rtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
 
-		// レンダーターゲットビューの生成
+		// --レンダーターゲットビューの生成
 		device->CreateRenderTargetView(backBuffers[i], &rtvDesc, rtvHandle);
 	}
 
-	// --フェンスの生成-- //
+#pragma endregion
+	/// --END-- ///
+
+	/// --フェンスの生成-- ///
+	/// ※CPUとGPUで同期をとるためのDirectXの仕組み ///
+#pragma region
+
 	result = device->CreateFence(fenceVal, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&fence));
+
+#pragma endregion
+	/// --END-- ///
 }

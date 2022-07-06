@@ -11,6 +11,8 @@ class DXManager {
 
 public:
 	// --DirectXの初期化で使う変数-- //
+
+	// --デバイス用-- //
 	ID3D12Device* device;
 	IDXGIFactory7* dxgiFactory;
 	IDXGISwapChain4* swapChain;
@@ -19,7 +21,7 @@ public:
 	ID3D12CommandQueue* commandQueue;
 	ID3D12DescriptorHeap* rtvHeap;
 
-	// --バックバッファ-- //
+	// --バックバッファのアドレスを入れておく変数-- //
 	std::vector<ID3D12Resource*> backBuffers;
 
 	// --デスクリプタヒープ-- //
@@ -38,6 +40,4 @@ public:
 
 	// --DirectX初期化処理-- //
 	void DXInitialize(HWND hwnd);
-
-	// --
 };

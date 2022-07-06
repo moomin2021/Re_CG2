@@ -31,17 +31,20 @@ Window::~Window() {
 void Window::WindowInitialize() {
 
 	// --ウィンドウクラスの設定-- //
-	w.cbSize = sizeof(WNDCLASSEX);
-	w.lpfnWndProc = (WNDPROC)WindowProc; // ウィンドウプロシージャを設定
+	w.cbSize = sizeof(WNDCLASSEX);// -> WNDCLASSEX構造体のサイズ
+	w.lpfnWndProc = (WNDPROC)WindowProc; // ウィンドウプロシージャを設定(アドレスを代入)
 	w.lpszClassName = L"DirectXGame"; // ウィンドウクラス名
 	w.hInstance = GetModuleHandle(nullptr); // ウィンドウハンドル
-	w.hCursor = LoadCursor(NULL, IDC_ARROW); // カーソル指定
+	w.hCursor = LoadCursor(NULL, IDC_ARROW); // マウスカーソル指定
 
 	// --ウィンドウクラスをOSに登録する-- //
 	RegisterClassEx(&w);
 
 	// --ウィンドウサイズ{ X座標 Y座標 横幅 縦幅 }-- //
 	wrc = { 0, 0, windowWidth, windowHeight };
+
+	// --自動でサイズを補正する-- //
+	AdjustWindowRect(&wrc, WS_OVERLAPPEDWINDOW, false);
 
 	// --ウィンドウオブジェクトの生成-- //
 	hwnd = CreateWindow(
@@ -59,9 +62,6 @@ void Window::WindowInitialize() {
 
 	// --ウィンドウを表示状態にする-- //
 	ShowWindow(hwnd, SW_SHOW);
-
-	// --自動でサイズを補正する-- //
-	AdjustWindowRect(&wrc, WS_OVERLAPPEDWINDOW, false);
 }
 
 // --ウィンドウの縦横幅を参照-- //
