@@ -1132,28 +1132,46 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		// --バックバッファの番号を取得(2つなので0番か1番)-- //
 		UINT bbIndex = dxMa->swapChain->GetCurrentBackBufferIndex();
 
-		// --1.リソースバリアで書き込み可能に変更-- //
+		/// --1.リソースバリアで書き込み可能に変更-- ///
+#pragma region
+
 		D3D12_RESOURCE_BARRIER barrierDesc{};
 		barrierDesc.Transition.pResource = dxMa->backBuffers[bbIndex]; // バックバッファを指定
 		barrierDesc.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT; // 表示状態から
 		barrierDesc.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET; // 描画状態へ
 		dxMa->commandList->ResourceBarrier(1, &barrierDesc);
 
-		// --2.描画先の変更-- //
+#pragma endregion
+		/// --END-- ///
+
+		/// --2.描画先の変更-- ///
+#pragma region
+		
 		// レンダーターゲットビューのハンドルを取得
 		D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = dxMa->rtvHeap->GetCPUDescriptorHandleForHeapStart();
 		rtvHandle.ptr += bbIndex * dxMa->device->GetDescriptorHandleIncrementSize(dxMa->rtvHeapDesc.Type);
+
+#pragma endregion
+		/// ※これ以降の描画コマンドでは、ここで指定した描画キャンパスに絵を描いていくことになる ///
+		/// --END-- ///
 
 		// --深度ステンシルビュー用デスクリプタヒープのハンドルを取得-- //
 		D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle = dsvHeap->GetCPUDescriptorHandleForHeapStart();
 		dxMa->commandList->OMSetRenderTargets(1, &rtvHandle, false, &dsvHandle);
 
-		// --3.画面クリア R G B A-- //
+		/// --3.画面クリア R G B A-- ///
+		/// ※バックバッファには前回に描いた絵がそのまま残っているので、一旦指定色で塗りつぶす ///
+#pragma region
+
 		FLOAT clearColor[] = { 0.1f, 0.25, 0.5f, 0.0f }; // 青っぽい色
 		dxMa->commandList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
 		dxMa->commandList->ClearDepthStencilView(dsvHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
 
-		// --4.描画コマンド-- //
+#pragma endregion
+		/// --END-- ///
+
+		/// --4.描画コマンド-- ///
+#pragma region
 
 		// --ビューポート設定コマンド-- //
 		D3D12_VIEWPORT viewport{};
@@ -1208,22 +1226,32 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 			DrawObject3d(&object3ds[i], dxMa->commandList, vbView, ibView, _countof(indices));
 		}
 
-		// --5.リソースバリアを戻す-- //
+#pragma endregion
+		/// --END-- ///
+
+		/// --5.リソースバリアを戻す-- ///
+#pragma region
+
+		// --バックバッファを書き込み可能状態から画面表示状態に変更する
 		barrierDesc.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET; // 描画状態から
 		barrierDesc.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT; // 表示状態へ
 		dxMa->commandList->ResourceBarrier(1, &barrierDesc);
 
-		// --命令のクローズ-- //
-		result = dxMa->commandList->Close();
-		assert(SUCCEEDED(result));
+		// --ここまでため込んだコマンドを実行し描画する処理-- //
+		{
+			// --命令のクローズ
+			result = dxMa->commandList->Close();
+			assert(SUCCEEDED(result));
 
-		// --コマンドリストの実行-- //
-		ID3D12CommandList * commandLists[] = { dxMa->commandList };
-		dxMa->commandQueue->ExecuteCommandLists(1, commandLists);
+			// --コマンドリストの実行
+			ID3D12CommandList* commandLists[] = { dxMa->commandList };
+			dxMa->commandQueue->ExecuteCommandLists(1, commandLists);
 
-		// --画面に表示するバッファをフリップ(裏表の入替え)-- //
-		result = dxMa->swapChain->Present(1, 0);
-		assert(SUCCEEDED(result));
+			// --画面に表示するバッファをフリップ(裏表の入替え)
+			result = dxMa->swapChain->Present(1, 0);
+			assert(SUCCEEDED(result));
+		}
+		// --END-- //
 
 		// --コマンドの実行完了を待つ-- //
 		dxMa->commandQueue->Signal(dxMa->fence, ++dxMa->fenceVal);
@@ -1236,12 +1264,16 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		}
 
 		// --キューをクリア-- //
+		// ※次の使用に備えてコマンドアロケータとコマンドリストをリセットしておく //
 		result = dxMa->cmdAllocator->Reset();
 		assert(SUCCEEDED(result));
 
 		// --再びコマンドリストを貯める準備-- //
 		result = dxMa->commandList->Reset(dxMa->cmdAllocator, nullptr);
 		assert(SUCCEEDED(result));
+
+#pragma endregion
+		/// --END-- ///
 
 #pragma endregion
 	}
