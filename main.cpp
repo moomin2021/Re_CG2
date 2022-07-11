@@ -594,7 +594,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	descriptorRange.BaseShaderRegister = 0;// -> テクスチャレジスタ0番
 	descriptorRange.OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 
-	// --頂点データ-- //
+	/// --頂点データ-- ///
+#pragma region
+
 	Vertex vertices[] = {
 		// --前面
 		{{ -5.0f, -5.0f, -5.0f}, {}, {0.0f, 1.0f}},// -> 左下 0
@@ -633,6 +635,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		{{  5.0f,  5.0f,  5.0f}, {}, {1.0f, 0.0f}},// -> 右上 23
 	};
 
+#pragma endregion
+	/// --END-- ///
+
 	uint16_t indices[] = {
 		// --前面
 		0, 1, 2,// -> 三角形1つ目
@@ -662,6 +667,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	// --頂点データ全体のサイズ = 頂点データ一つ分のサイズ * 頂点データの要素数-- //
 	UINT sizeVB = static_cast<UINT>(sizeof(vertices[0]) * _countof(vertices));
 
+	/// --頂点バッファの確保-- ///
+#pragma region
+
 	// --頂点バッファの設定-- //
 	D3D12_HEAP_PROPERTIES heapProp{}; // ヒープ設定
 	heapProp.Type = D3D12_HEAP_TYPE_UPLOAD; // GPUへの転送用
@@ -686,6 +694,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		nullptr,
 		IID_PPV_ARGS(&vertBuff));
 	assert(SUCCEEDED(result));
+
+#pragma endregion
+	/// --END-- ///
 	
 	// --法線の計算-- //
 	for (size_t i = 0; i < _countof(indices) / 3; i++) {
@@ -715,8 +726,13 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		XMStoreFloat3(&vertices[index2].normal, normal);
 	}
 
+	/// --頂点バッファへのデータ転送-- ///
+#pragma region
+
 	// --GPU上のバッファに対応した仮想メモリ(メインメモリ上)を取得-- //
 	Vertex * vertMap = nullptr;
+
+	// --Map処理でメインメモリとGPUのメモリを紐づける-- //
 	result = vertBuff->Map(0, nullptr, (void **)&vertMap);
 	assert(SUCCEEDED(result));
 
@@ -729,6 +745,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	// --繋がりを解除-- //
 	vertBuff->Unmap(0, nullptr);
 
+#pragma endregion
+	/// --END-- ///
+
+	/// --頂点バッファビューの作成-- ///
+#pragma region
+
 	// --頂点バッファビューの作成-- //
 	D3D12_VERTEX_BUFFER_VIEW vbView{};
 
@@ -740,6 +762,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 
 	// --頂点1つ分のデータサイズ-- //
 	vbView.StrideInBytes = sizeof(vertices[0]);
+
+#pragma endregion
+	/// --END-- ///
+
+	/// --シェーダーの読み込みとコンパイル-- ///
+#pragma region
 
 	ID3DBlob * vsBlob = nullptr; // 頂点シェーダオブジェクト
 	ID3DBlob * psBlob = nullptr; // ピクセルシェーダオブジェクト
@@ -795,7 +823,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		assert(0);
 	}
 
-	// --頂点レイアウト-- //
+#pragma endregion
+	/// --END-- ///
+
+	/// --頂点レイアウト-- ///
+#pragma region
+
 	D3D12_INPUT_ELEMENT_DESC inputLayout[] = {
 		{
 			"POSITION",// -> セマンティック名
@@ -827,6 +860,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 			0// -> 一度に描画するインスタンス数（0でよい）
 		}, // (1行で書いたほうが見やすい)
 	};
+
+#pragma endregion
+	/// --END-- ///
+
+	/// --グラフィックスパイプライン-- ///
+#pragma region
 
 	// --グラフィックスパイプライン設定-- //
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC pipelineDesc{};
@@ -957,6 +996,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	ID3D12PipelineState * pipelineState = nullptr;
 	result = dxMa->device->CreateGraphicsPipelineState(&pipelineDesc, IID_PPV_ARGS(&pipelineState));
 	assert(SUCCEEDED(result));
+
+#pragma endregion
+	/// --END-- ///
 
 	// --インデックスデータ全体のサイズ-- //
 	UINT sizeIB = static_cast<UINT>(sizeof(uint16_t) * _countof(indices));
@@ -1173,6 +1215,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		/// --4.描画コマンド-- ///
 #pragma region
 
+		/// --ビューポート設定-- ///
+#pragma region
+
 		// --ビューポート設定コマンド-- //
 		D3D12_VIEWPORT viewport{};
 		viewport.Width = win->GetWidth();
@@ -1185,6 +1230,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		// --ビューポート設定コマンドを、コマンドリストに積む-- //
 		dxMa->commandList->RSSetViewports(1, &viewport);
 
+#pragma endregion
+		/// --END-- ///
+
+		/// --シザー矩形-- ///
+#pragma region
+
 		// --シザー矩形-- //
 		D3D12_RECT scissorRect{};
 		scissorRect.left = 0; // 切り抜き座標左
@@ -1194,6 +1245,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		
 		// --シザー矩形設定コマンドを、コマンドリストに積む-- //
 		dxMa->commandList->RSSetScissorRects(1, &scissorRect);
+
+#pragma endregion
+		/// --END-- ///
 
 		// --パイプラインステートとルートシグネチャの設定コマンド-- //
 		dxMa->commandList->SetPipelineState(pipelineState);
