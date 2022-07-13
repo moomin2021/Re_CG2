@@ -24,10 +24,11 @@ void DXManager::DXInitialize(HWND hwnd) {
 
 #ifdef _DEBUG
 	//デバッグレイヤーをオンに
-	ID3D12Debug* debugController;
+	ID3D12Debug1* debugController;
 	if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&debugController))))
 	{
 		debugController->EnableDebugLayer();
+		debugController->SetEnableGPUBasedValidation(true);
 	}
 #endif
 
@@ -135,7 +136,7 @@ void DXManager::DXInitialize(HWND hwnd) {
 	// --コマンドリストを生成-- //
 	result = device->CreateCommandList(0,
 		D3D12_COMMAND_LIST_TYPE_DIRECT,
-		cmdAllocator, nullptr,
+		cmdAllocator.Get(), nullptr,
 		IID_PPV_ARGS(&commandList));
 	assert(SUCCEEDED(result));
 
@@ -195,11 +196,17 @@ void DXManager::DXInitialize(HWND hwnd) {
 	// >>解像度がウィンドウサイズに一致するように変更する
 	swapChainDesc.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
 
+	// --IDXGISwapChain1のComPtrを用意-- //
+	ComPtr<IDXGISwapChain1> swapchain1;
+
 	// --スワップチェーンの生成-- //
 	result = dxgiFactory->CreateSwapChainForHwnd(
-		commandQueue, hwnd, &swapChainDesc, nullptr, nullptr,
-		(IDXGISwapChain1**)&swapChain);
+		commandQueue.Get(), hwnd, &swapChainDesc, nullptr, nullptr,
+		&swapchain1);
 	assert(SUCCEEDED(result));
+
+	// --生成したIDXGISwapChain1のオブジェクトをIDXGISwapChain4に変換する-- //
+	swapchain1.As(&swapChain);
 
 #pragma endregion
 	/// --END-- ///
@@ -241,7 +248,7 @@ void DXManager::DXInitialize(HWND hwnd) {
 		rtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
 
 		// --レンダーターゲットビューの生成
-		device->CreateRenderTargetView(backBuffers[i], &rtvDesc, rtvHandle);
+		device->CreateRenderTargetView(backBuffers[i].Get(), &rtvDesc, rtvHandle);
 	}
 
 #pragma endregion
