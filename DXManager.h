@@ -4,11 +4,10 @@
 #include <cassert>
 #include <vector>
 #include <wrl.h>
+using namespace Microsoft::WRL;
 
 #pragma comment(lib, "d3d12.lib")
 #pragma comment(lib, "dxgi.lib")
-
-using namespace Microsoft::WRL;
 
 class DXManager {
 
@@ -20,7 +19,7 @@ public:
 	ComPtr<IDXGIFactory7> dxgiFactory;
 	ComPtr<IDXGISwapChain4> swapChain;
 	ComPtr<ID3D12CommandAllocator> cmdAllocator;
-	ComPtr<ID3D12GraphicsCommandList> commandList;
+	ID3D12GraphicsCommandList* commandList;
 	ComPtr<ID3D12CommandQueue> commandQueue;
 	ComPtr<ID3D12DescriptorHeap> rtvHeap;
 

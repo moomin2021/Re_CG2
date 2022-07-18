@@ -24,11 +24,10 @@ void DXManager::DXInitialize(HWND hwnd) {
 
 #ifdef _DEBUG
 	//デバッグレイヤーをオンに
-	ID3D12Debug1* debugController;
+	ID3D12Debug* debugController;
 	if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&debugController))))
 	{
 		debugController->EnableDebugLayer();
-		debugController->SetEnableGPUBasedValidation(true);
 	}
 #endif
 
@@ -176,7 +175,7 @@ void DXManager::DXInitialize(HWND hwnd) {
 	// --色情報の書式（表示形式）
 	//※DXGI_FORMAT_R8G8B8A8_UNORMはアルファを含むチャンネルあたり8ビットをサポート
 	swapChainDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-	
+
 	// --ピクセルあたりのマルチサンプルの数を指定する
 	swapChainDesc.SampleDesc.Count = 1;
 
@@ -197,16 +196,16 @@ void DXManager::DXInitialize(HWND hwnd) {
 	swapChainDesc.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
 
 	// --IDXGISwapChain1のComPtrを用意-- //
-	ComPtr<IDXGISwapChain1> swapchain1;
+	ComPtr<IDXGISwapChain1> swapChain1;
 
 	// --スワップチェーンの生成-- //
 	result = dxgiFactory->CreateSwapChainForHwnd(
 		commandQueue.Get(), hwnd, &swapChainDesc, nullptr, nullptr,
-		&swapchain1);
+		(IDXGISwapChain1**)&swapChain1);
 	assert(SUCCEEDED(result));
 
 	// --生成したIDXGISwapChain1のオブジェクトをIDXGISwapChain4に変換する-- //
-	swapchain1.As(&swapChain);
+	swapChain1.As(&swapChain);
 
 #pragma endregion
 	/// --END-- ///
