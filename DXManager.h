@@ -14,6 +14,9 @@ class DXManager {
 public:
 	// --DirectXの初期化で使う変数-- //
 
+	// --ウィンドウサイズ-- //
+	int winWidth, winHeight;
+
 	// --デバイス用-- //
 	ComPtr<ID3D12Device> device;
 	ComPtr<IDXGIFactory7> dxgiFactory;
@@ -33,13 +36,23 @@ public:
 	ComPtr<ID3D12Fence> fence;
 	UINT64 fenceVal;
 
+	D3D12_RESOURCE_BARRIER barrierDesc;
+
+	ID3D12DescriptorHeap* dsvHeap;
+
 public:
 	// --コンストラクタ-- //
-	DXManager();
+	DXManager(int width, int height);
 
 	// --デストラクタ-- //
 	~DXManager();
 
 	// --DirectX初期化処理-- //
 	void DXInitialize(HWND hwnd);
+
+	// --グラフィックスコマンド開始-- //
+	void GraphicsCommandStart();
+
+	// --グラフィックスコマンド終了-- //
+	void GraphicsCommandEnd();
 };

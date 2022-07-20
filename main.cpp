@@ -143,7 +143,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	win->WindowInitialize();
 
 	// --DirectX初期化クラス-- //
-	DXManager* dxMa = new DXManager();
+	DXManager* dxMa = new DXManager(win->GetWidth(), win->GetHeight());
 
 	// --DirectX初期化処理-- //
 	dxMa->DXInitialize(win->hwnd);
@@ -161,53 +161,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 #pragma region
 
 	HRESULT result;
-
-	// --リソース設定-- //
-	D3D12_RESOURCE_DESC depthResourceDesc{};
-	depthResourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
-	depthResourceDesc.Width = win->GetWidth();// ---> レンダーターゲットに合わせる
-	depthResourceDesc.Height = win->GetHeight();// -> レンダーターゲットに合わせる
-	depthResourceDesc.DepthOrArraySize = 1;
-	depthResourceDesc.Format = DXGI_FORMAT_D32_FLOAT;// -> 深度値フォーマット
-	depthResourceDesc.SampleDesc.Count = 1;
-	depthResourceDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;// -> デプスステンシル
-
-	// --深度値用ヒーププロパティ-- //
-	D3D12_HEAP_PROPERTIES depthHeapProp{};
-	depthHeapProp.Type = D3D12_HEAP_TYPE_DEFAULT;
-
-	// --深度値のクリア設定-- //
-	D3D12_CLEAR_VALUE depthClearValue{};
-	depthClearValue.DepthStencil.Depth = 1.0f;// -> 深度値1.0f（最大値）でクリア
-	depthClearValue.Format = DXGI_FORMAT_D32_FLOAT;// -> 深度値フォーマット
-
-	// --リソース生成-- //
-	ID3D12Resource* depthBuff = nullptr;
-	result = dxMa->device->CreateCommittedResource(
-		&depthHeapProp,
-		D3D12_HEAP_FLAG_NONE,
-		&depthResourceDesc,
-		D3D12_RESOURCE_STATE_DEPTH_WRITE,// -> 深度値書き込みに使用
-		&depthClearValue,
-		IID_PPV_ARGS(&depthBuff)
-	);
-
-	// --深度ビュー用デスクリプタヒープ作成-- //
-	D3D12_DESCRIPTOR_HEAP_DESC dsvHeapDesc{};
-	dsvHeapDesc.NumDescriptors = 1;// -> 深度ビューは1つ
-	dsvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;// -> デプスステンシルビュー
-	ID3D12DescriptorHeap* dsvHeap = nullptr;
-	result = dxMa->device->CreateDescriptorHeap(&dsvHeapDesc, IID_PPV_ARGS(&dsvHeap));
-
-	// --深度ビュー作成-- //
-	D3D12_DEPTH_STENCIL_VIEW_DESC dsvDesc{};
-	dsvDesc.Format = DXGI_FORMAT_D32_FLOAT;// -> 深度値フォーマット
-	dsvDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
-	dxMa->device->CreateDepthStencilView(
-		depthBuff,
-		&dsvDesc,
-		dsvHeap->GetCPUDescriptorHandleForHeapStart()
-	);
 
 	// --定数バッファに送るデータをまとめた型-- //
 	struct ConstBufferDataMaterial
@@ -334,77 +287,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	XMFLOAT3 target(0, 0, 0);
 	XMFLOAT3 up(0, 1, 0);
 	matView = XMMatrixLookAtLH(XMLoadFloat3(&eye), XMLoadFloat3(&target), XMLoadFloat3(&up));
-
-	//// --ワールド変換行列-- //
-	//XMMATRIX matWorld0;
-	//matWorld0 = XMMatrixIdentity();
-
-	//// --スケーリング行列
-	//XMMATRIX matScale0;
-	//matScale0 = XMMatrixScaling(1.0f, 0.5f, 1.0f);
-
-	//// ワールド行列にスケーリングを反映
-	//matWorld0 *= matScale0;
-
-	//// --回転行列
-	//XMMATRIX matRot0;
-	//matRot0 = XMMatrixIdentity();
-
-	//// Z軸まわりに45度回転
-	//matRot0 *= XMMatrixRotationZ(XMConvertToRadians(0.0f));
-	//matRot0 *= XMMatrixRotationX(XMConvertToRadians(15.0f));
-	//matRot0 *= XMMatrixRotationY(XMConvertToRadians(30.0f));
-
-	//// ワールド行列に回転を反映
-	//matWorld0 *= matRot0;
-
-	//// --平行移動行列
-	//XMMATRIX matTrans0;
-	//matTrans0 = XMMatrixTranslation(-50.0f, 0, 0);
-
-	//matWorld0 *= matTrans0;
-
-	//// --定数バッファに転送-- //
-	//constMapTransform0->mat = matWorld0 * matView * matProjection;
-
-	//// --ワールド変換行列-- //
-	//XMMATRIX matWorld1;
-	//matWorld1 = XMMatrixIdentity();
-
-	//// --各種変形行列を計算
-	//XMMATRIX matScale1 = XMMatrixScaling(1.0f, 1.0f, 1.0f);
-	//XMMATRIX matRot1 = XMMatrixRotationY(XM_PI / 4.0f);
-	//XMMATRIX matTrans1 = XMMatrixTranslation(-20.0f, 0, 0);
-
-	//// --ワールド行列を合成
-	//matWorld1 = matScale1 * matRot1 * matTrans1;
-
-	//// --ワールド、ビュー、射影行列を合成してシェーダーに転送-- //
-	//constMapTransform1->mat = matWorld1 * matView * matProjection;
-
-	//// --横方向ピクセル数-- //
-	//const size_t textureWidth = 256;
-
-	//// --縦方向ピクセル数-- //
-	//const size_t textureHeight = 256;
-
-	//// --配列の要素数-- //
-	//const size_t imageDataConst = textureWidth * textureHeight;
-
-	//// --画像イメージデータ配列-- //
-	//XMFLOAT4 * imageData = new XMFLOAT4[imageDataConst];// -> 必ず後で解放する
-
-	//// --全ピクセルの色を初期化-- //
-	//for (size_t i = 0; i < imageDataConst; i++)
-	//{
-	//	imageData[i].x = 1.0f;// -> R
-	//	imageData[i].y = 0.0f;// -> G
-	//	imageData[i].z = 0.0f;// -> B
-	//	imageData[i].w = 1.0f;// -> A
-	//}
-
-	//// --元データ解放-- //
-	//delete[] imageData;
 
 	TexMetadata metadata{};
 	ScratchImage scratchImg{};
@@ -957,6 +839,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	rootParams[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;// -> 全てのシェーダーから見える
 
 	// --テクスチャサンプラーの設定-- //
+	// ※テクスチャがオブジェクトに張り付くときの拡大縮小の補間方法などを指定するもの //
 	D3D12_STATIC_SAMPLER_DESC samplerDesc{};
 	samplerDesc.AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;// -> 横繰り返し（タイリング）
 	samplerDesc.AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP;// -> 縦繰り返し（タイリング）
@@ -1123,90 +1006,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 			object3ds[i].Update(matView, matProjection);
 		}
 
-		//// --ワールド行列に単位行列を代入
-		//matWorld0 = XMMatrixIdentity();
 
-		//// --スケーリング行列
-		//XMMATRIX matScale;
-		//matScale = XMMatrixScaling(scale.x, scale.y, scale.z);
-
-		//// --回転行列
-		//XMMATRIX matRot;
-		//matRot = XMMatrixIdentity();
-
-		//// Z軸まわりに45度回転
-		//matRot *= XMMatrixRotationZ(XMConvertToRadians(rotation.x));
-		//matRot *= XMMatrixRotationX(XMConvertToRadians(rotation.y));
-		//matRot *= XMMatrixRotationY(XMConvertToRadians(rotation.z));
-
-		//// --平行移動行列
-		//XMMATRIX matTrans;
-		//matTrans = XMMatrixTranslation(position.x, position.y, position.z);
-
-		//// --変形のリセット
-		//matWorld0 = XMMatrixIdentity();
-
-		//// --ワールド行列に各要素を反映
-		//matWorld0 *= matScale;
-		//matWorld0 *= matRot;
-		//matWorld0 *= matTrans;
-
-		//// --定数バッファに転送-- //
-		//constMapTransform0->mat = matWorld0 * matView * matProjection;
-		//constMapTransform1->mat = matWorld1 * matView * matProjection;
-
-		//FLOAT clearColor[] = { 0.1f,0.25f, 0.5f,0.0f }; // 青っぽい色
-
-		//// --スペースキーが押されていたら-- //
-		//if (input->PushKey(DIK_SPACE))
-		//{
-		//	clearColor[0] = 1.0f;
-		//}
-
-		//D3D12_FILL_MODE fillMode = D3D12_FILL_MODE_SOLID;
-
-		//if (input->PushKey(DIK_SPACE))
-		//{
-		//	fillMode = D3D12_FILL_MODE_WIREFRAME;
-		//}
-
-		// --バックバッファの番号を取得(2つなので0番か1番)-- //
-		UINT bbIndex = dxMa->swapChain->GetCurrentBackBufferIndex();
-
-		/// --1.リソースバリアで書き込み可能に変更-- ///
-#pragma region
-
-		D3D12_RESOURCE_BARRIER barrierDesc{};
-		barrierDesc.Transition.pResource = dxMa->backBuffers[bbIndex].Get(); // バックバッファを指定
-		barrierDesc.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT; // 表示状態から
-		barrierDesc.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET; // 描画状態へ
-		dxMa->commandList->ResourceBarrier(1, &barrierDesc);
-
-#pragma endregion
-		/// --END-- ///
-
-		/// --2.描画先の変更-- ///
-#pragma region
-
-		// レンダーターゲットビューのハンドルを取得
-		D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = dxMa->rtvHeap->GetCPUDescriptorHandleForHeapStart();
-		rtvHandle.ptr += bbIndex * dxMa->device->GetDescriptorHandleIncrementSize(dxMa->rtvHeapDesc.Type);
-
-#pragma endregion
-		/// ※これ以降の描画コマンドでは、ここで指定した描画キャンパスに絵を描いていくことになる ///
-		/// --END-- ///
-
-		// --深度ステンシルビュー用デスクリプタヒープのハンドルを取得-- //
-		D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle = dsvHeap->GetCPUDescriptorHandleForHeapStart();
-		dxMa->commandList->OMSetRenderTargets(1, &rtvHandle, false, &dsvHandle);
-
-		/// --3.画面クリア R G B A-- ///
-		/// ※バックバッファには前回に描いた絵がそのまま残っているので、一旦指定色で塗りつぶす ///
-#pragma region
-
-		FLOAT clearColor[] = { 0.1f, 0.25, 0.5f, 0.0f }; // 青っぽい色
-		dxMa->commandList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
-		dxMa->commandList->ClearDepthStencilView(dsvHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
+		dxMa->GraphicsCommandStart();
 
 #pragma endregion
 		/// --END-- ///
@@ -1282,48 +1083,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 #pragma endregion
 		/// --END-- ///
 
-		/// --5.リソースバリアを戻す-- ///
-#pragma region
-
-		// --バックバッファを書き込み可能状態から画面表示状態に変更する
-		barrierDesc.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET; // 描画状態から
-		barrierDesc.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT; // 表示状態へ
-		dxMa->commandList->ResourceBarrier(1, &barrierDesc);
-
-		// --ここまでため込んだコマンドを実行し描画する処理-- //
-		{
-			// --命令のクローズ
-			result = dxMa->commandList->Close();
-			assert(SUCCEEDED(result));
-
-			// --コマンドリストの実行
-			ID3D12CommandList* commandLists[] = { dxMa->commandList};
-			dxMa->commandQueue->ExecuteCommandLists(1, commandLists);
-
-			// --画面に表示するバッファをフリップ(裏表の入替え)
-			result = dxMa->swapChain->Present(1, 0);
-			assert(SUCCEEDED(result));
-		}
-		// --END-- //
-
-		// --コマンドの実行完了を待つ-- //
-		dxMa->commandQueue->Signal(dxMa->fence.Get(), ++dxMa->fenceVal);
-		if (dxMa->fence->GetCompletedValue() != dxMa->fenceVal)
-		{
-			HANDLE event = CreateEvent(nullptr, false, false, nullptr);
-			dxMa->fence->SetEventOnCompletion(dxMa->fenceVal, event);
-			WaitForSingleObject(event, INFINITE);
-			CloseHandle(event);
-		}
-
-		// --キューをクリア-- //
-		// ※次の使用に備えてコマンドアロケータとコマンドリストをリセットしておく //
-		result = dxMa->cmdAllocator->Reset();
-		assert(SUCCEEDED(result));
-
-		// --再びコマンドリストを貯める準備-- //
-		result = dxMa->commandList->Reset(dxMa->cmdAllocator.Get(), nullptr);
-		assert(SUCCEEDED(result));
+		dxMa->GraphicsCommandEnd();
 
 #pragma endregion
 		/// --END-- ///

@@ -1,9 +1,9 @@
 #include "DXManager.h"
 
 // --コンストラクタ-- //
-DXManager::DXManager() : device(nullptr), dxgiFactory(nullptr), swapChain(nullptr),
+DXManager::DXManager(int width, int height) : winWidth(width), winHeight(height), device(nullptr), dxgiFactory(nullptr), swapChain(nullptr),
 cmdAllocator(nullptr), commandList(nullptr), commandQueue(nullptr), rtvHeap(nullptr),
-backBuffers{}, fence(nullptr), fenceVal(0) {}
+backBuffers{}, fence(nullptr), fenceVal(0), barrierDesc{}, dsvHeap(nullptr) {}
 
 // --デストラクタ-- //
 DXManager::~DXManager() {
@@ -18,16 +18,20 @@ void DXManager::DXInitialize(HWND hwnd) {
 	HRESULT result;
 
 
+	/// --DirectX初期化処理-- ///
+#pragma region
+
 	/// --デバックレイヤーの有効か -- ///
 	/// ※Visual Studioの「出力」ウィンドウで追加のエラーメッセージが表示できるように ///
 #pragma region
 
 #ifdef _DEBUG
 	//デバッグレイヤーをオンに
-	ID3D12Debug* debugController;
+	ID3D12Debug1* debugController;
 	if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&debugController))))
 	{
 		debugController->EnableDebugLayer();
+		debugController->SetEnableGPUBasedValidation(TRUE);
 	}
 #endif
 
@@ -119,6 +123,31 @@ void DXManager::DXInitialize(HWND hwnd) {
 
 #pragma endregion
 	/// --END-- ///
+
+#ifdef _DEBUG
+//デバッグレイヤーをオンに
+	ComPtr<ID3D12InfoQueue> infoQueue;
+	if (SUCCEEDED(device->QueryInterface(IID_PPV_ARGS(&infoQueue)))) {
+		// 抑制するエラー
+		D3D12_MESSAGE_ID denyIds[] = {
+			/*
+			 * Windows11でのDXGIデバッグレイヤーとDX12デバッグレイヤーの相互作用バグによるエラーメッセージ
+			 * https://stackoverflow.com/questions/69805245/directx-12-application-is-crashing-in-windows-11
+			 */
+			D3D12_MESSAGE_ID_RESOURCE_BARRIER_MISMATCHING_COMMAND_LIST_TYPE };
+		// 抑制する表示レベル
+		D3D12_MESSAGE_SEVERITY severities[] = { D3D12_MESSAGE_SEVERITY_INFO };
+		D3D12_INFO_QUEUE_FILTER filter{};
+		filter.DenyList.NumIDs = _countof(denyIds);
+		filter.DenyList.pIDList = denyIds;
+		filter.DenyList.NumSeverities = _countof(severities);
+		filter.DenyList.pSeverityList = severities;
+		// 指定したエラーの表示を抑制する
+		infoQueue->PushStorageFilter(&filter);
+		infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_CORRUPTION, true);// ->ヤバいエラー時に止まる
+		infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_ERROR, true);// -> エラー時に止まる
+	}
+#endif
 
 	/// --コマンドリスト-- ///
 	/// ※GPUに、まとめて命令を送るためのコマンドリストを生成する //
@@ -258,6 +287,156 @@ void DXManager::DXInitialize(HWND hwnd) {
 #pragma region
 
 	result = device->CreateFence(fenceVal, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&fence));
+
+#pragma endregion
+	/// --END-- ///
+
+#pragma endregion
+	/// --DirectX初期化END-- ///
+
+	/// --描画初期化処理-- ///
+#pragma region
+
+	// --リソース設定-- //
+	D3D12_RESOURCE_DESC depthResourceDesc{};
+	depthResourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+	depthResourceDesc.Width = winWidth;// ---> レンダーターゲットに合わせる
+	depthResourceDesc.Height = winHeight;// -> レンダーターゲットに合わせる
+	depthResourceDesc.DepthOrArraySize = 1;
+	depthResourceDesc.Format = DXGI_FORMAT_D32_FLOAT;// -> 深度値フォーマット
+	depthResourceDesc.SampleDesc.Count = 1;
+	depthResourceDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;// -> デプスステンシル
+
+	// --深度値用ヒーププロパティ-- //
+	D3D12_HEAP_PROPERTIES depthHeapProp{};
+	depthHeapProp.Type = D3D12_HEAP_TYPE_DEFAULT;
+
+	// --深度値のクリア設定-- //
+	D3D12_CLEAR_VALUE depthClearValue{};
+	depthClearValue.DepthStencil.Depth = 1.0f;// -> 深度値1.0f（最大値）でクリア
+	depthClearValue.Format = DXGI_FORMAT_D32_FLOAT;// -> 深度値フォーマット
+
+	// --リソース生成-- //
+	ID3D12Resource* depthBuff = nullptr;
+	result = device->CreateCommittedResource(
+		&depthHeapProp,
+		D3D12_HEAP_FLAG_NONE,
+		&depthResourceDesc,
+		D3D12_RESOURCE_STATE_DEPTH_WRITE,// -> 深度値書き込みに使用
+		&depthClearValue,
+		IID_PPV_ARGS(&depthBuff)
+	);
+
+	// --深度ビュー用デスクリプタヒープ作成-- //
+	D3D12_DESCRIPTOR_HEAP_DESC dsvHeapDesc{};
+	dsvHeapDesc.NumDescriptors = 1;// -> 深度ビューは1つ
+	dsvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;// -> デプスステンシルビュー
+	result = device->CreateDescriptorHeap(&dsvHeapDesc, IID_PPV_ARGS(&dsvHeap));
+
+	// --深度ビュー作成-- //
+	D3D12_DEPTH_STENCIL_VIEW_DESC dsvDesc{};
+	dsvDesc.Format = DXGI_FORMAT_D32_FLOAT;// -> 深度値フォーマット
+	dsvDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
+	device->CreateDepthStencilView(
+		depthBuff,
+		&dsvDesc,
+		dsvHeap->GetCPUDescriptorHandleForHeapStart()
+	);
+
+#pragma endregion
+	/// --描画初期化処理END-- ///
+}
+
+// --グラフィックスコマンド開始-- //
+void DXManager::GraphicsCommandStart() {
+	HRESULT result;
+
+	/// --1.リソースバリアで書き込み可能に変更-- ///
+#pragma region
+	// --バックバッファの番号を取得(2つなので0番か1番)-- //
+	UINT bbIndex = swapChain->GetCurrentBackBufferIndex();
+
+	barrierDesc.Transition.pResource = backBuffers[bbIndex].Get(); // バックバッファを指定
+	barrierDesc.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT; // 表示状態から
+	barrierDesc.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET; // 描画状態へ
+	commandList->ResourceBarrier(1, &barrierDesc);
+
+#pragma endregion
+	/// --END-- ///
+
+	/// --2.描画先の変更-- ///
+#pragma region
+
+		// レンダーターゲットビューのハンドルを取得
+	D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = rtvHeap->GetCPUDescriptorHandleForHeapStart();
+	rtvHandle.ptr += bbIndex * device->GetDescriptorHandleIncrementSize(rtvHeapDesc.Type);
+
+#pragma endregion
+	/// ※これ以降の描画コマンドでは、ここで指定した描画キャンパスに絵を描いていくことになる ///
+	/// --END-- ///
+
+	// --深度ステンシルビュー用デスクリプタヒープのハンドルを取得-- //
+	D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle = dsvHeap->GetCPUDescriptorHandleForHeapStart();
+	commandList->OMSetRenderTargets(1, &rtvHandle, false, &dsvHandle);
+
+	/// --3.画面クリア R G B A-- ///
+	/// ※バックバッファには前回に描いた絵がそのまま残っているので、一旦指定色で塗りつぶす ///
+#pragma region
+
+	FLOAT clearColor[] = { 0.1f, 0.25, 0.5f, 0.0f }; // 青っぽい色
+	commandList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
+	commandList->ClearDepthStencilView(dsvHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
+
+#pragma endregion
+	/// --END-- ///
+}
+
+// --グラフィックスコマンド終了-- //
+void DXManager::GraphicsCommandEnd() {
+	HRESULT result;
+
+	/// --5.リソースバリアを戻す-- ///
+#pragma region
+
+		// --バックバッファを書き込み可能状態から画面表示状態に変更する
+	barrierDesc.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET; // 描画状態から
+	barrierDesc.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT; // 表示状態へ
+	commandList->ResourceBarrier(1, &barrierDesc);
+
+	// --ここまでため込んだコマンドを実行し描画する処理-- //
+	{
+		// --命令のクローズ
+		result = commandList->Close();
+		assert(SUCCEEDED(result));
+
+		// --コマンドリストの実行
+		ID3D12CommandList* commandLists[] = { commandList };
+		commandQueue->ExecuteCommandLists(1, commandLists);
+
+		// --画面に表示するバッファをフリップ(裏表の入替え)
+		result = swapChain->Present(1, 0);
+		assert(SUCCEEDED(result));
+	}
+	// --END-- //
+
+	// --コマンドの実行完了を待つ-- //
+	commandQueue->Signal(fence.Get(), ++fenceVal);
+	if (fence->GetCompletedValue() != fenceVal)
+	{
+		HANDLE event = CreateEvent(nullptr, false, false, nullptr);
+		fence->SetEventOnCompletion(fenceVal, event);
+		WaitForSingleObject(event, INFINITE);
+		CloseHandle(event);
+	}
+
+	// --キューをクリア-- //
+	// ※次の使用に備えてコマンドアロケータとコマンドリストをリセットしておく //
+	result = cmdAllocator->Reset();
+	assert(SUCCEEDED(result));
+
+	// --再びコマンドリストを貯める準備-- //
+	result = commandList->Reset(cmdAllocator.Get(), nullptr);
+	assert(SUCCEEDED(result));
 
 #pragma endregion
 	/// --END-- ///
