@@ -2,6 +2,7 @@
 #include "Window.h"
 #include "DXManager.h"
 #include "Object3D.h"
+#include "Vertex.h"
 #include <d3dcompiler.h>
 #include <d3d12.h>
 #include <dxgi1_6.h>
@@ -169,14 +170,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		XMFLOAT4 color;
 	};
 
-	// -- 頂点データ構造体-- //
-	struct Vertex
-	{
-		XMFLOAT3 pos;// ----> xyz座標
-		XMFLOAT3 normal;// -> 法線ベクトル
-		XMFLOAT2 uv;// -----> uv座標
-	};
-
 	ID3D12Resource* constBuffMaterial = nullptr;
 	ConstBufferDataMaterial* constMapMaterial = nullptr;
 
@@ -220,48 +213,22 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	//ID3D12Resource * constBuffTransform1 = nullptr;
 	//ConstBufferDataTransform * constMapTransform1 = nullptr;
 
-	// --3Dオブジェクトの数-- //
-	const size_t kObjectCount = 50;
-
-	// 3Dオブジェクトの配列
-	Object3D object3ds[kObjectCount];
-
 	{
-		// --ヒープ設定-- //
-		D3D12_HEAP_PROPERTIES cbHeapProp{};
-		cbHeapProp.Type = D3D12_HEAP_TYPE_UPLOAD;// -> GPUへの転送用
+		//// --ヒープ設定-- //
+		//D3D12_HEAP_PROPERTIES cbHeapProp{};
+		//cbHeapProp.Type = D3D12_HEAP_TYPE_UPLOAD;// -> GPUへの転送用
 
-		// --リソース設定-- //
-		D3D12_RESOURCE_DESC cbResourceDesc{};
-		cbResourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
-		cbResourceDesc.Width = (sizeof(ConstBufferDataTransform) + 0xff) & ~0xff;// -> 256バイトアラインメント
-		cbResourceDesc.Height = 1;
-		cbResourceDesc.DepthOrArraySize = 1;
-		cbResourceDesc.MipLevels = 1;
-		cbResourceDesc.SampleDesc.Count = 1;
-		cbResourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+		//// --リソース設定-- //
+		//D3D12_RESOURCE_DESC cbResourceDesc{};
+		//cbResourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+		//cbResourceDesc.Width = (sizeof(ConstBufferDataTransform) + 0xff) & ~0xff;// -> 256バイトアラインメント
+		//cbResourceDesc.Height = 1;
+		//cbResourceDesc.DepthOrArraySize = 1;
+		//cbResourceDesc.MipLevels = 1;
+		//cbResourceDesc.SampleDesc.Count = 1;
+		//cbResourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
 
-		// --配列内の全オブジェクトに対して-- //
-		for (size_t i = 0; i < _countof(object3ds); i++) {
-			// --初期化
-			object3ds[i].Initialize(dxMa->device.Get());
-
-			// --ここからは親子構造のサンプル
-			// 先頭以外なら
-			if (i > 0) {
-				// --1つ前のオブジェクトを親オブジェクトとする
-				object3ds[i].parent = &object3ds[i - 1];
-
-				// --親オブジェクトの9割の大きさ
-				object3ds[i].scale = { 0.9f, 0.9f, 0.9f };
-
-				// --親オブジェクトに対してZ軸まわりに30度回転
-				object3ds[i].rotation = { 0.0f, 0.0f, XMConvertToRadians(30.0f) };
-
-				// --親オブジェクトに対してZ方向に-8.0ずらす
-				object3ds[i].position = { 0.0f, 0.0f, -8.0f };
-			}
-		}
+		
 	}
 
 	//// --単位行列を代入-- //
@@ -336,6 +303,19 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	metadata.format = MakeSRGB(metadata.format);
 	metadata2.format = MakeSRGB(metadata2.format);
 
+	// --自作画像データ-- //
+	const size_t textureWidth = 256;
+	const size_t textureHeight = 256;
+	const size_t imageDataCount = textureWidth * textureHeight;
+	XMFLOAT4* imageData = new XMFLOAT4[imageDataCount];
+
+	for (size_t i = 0; i < imageDataCount; i++) {
+		imageData[i].x = 1.0f;
+		imageData[i].y = 1.0f;
+		imageData[i].z = 1.0f;
+		imageData[i].w = 1.0f;
+	}
+
 	// --ヒープ設定-- //
 	D3D12_HEAP_PROPERTIES textureHeapProp{};
 	textureHeapProp.Type = D3D12_HEAP_TYPE_CUSTOM;
@@ -361,6 +341,16 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	textureResourceDesc2.MipLevels = (UINT16)metadata2.mipLevels;
 	textureResourceDesc2.SampleDesc.Count = 1;
 
+	D3D12_RESOURCE_DESC textureResourceDesc3{};
+	textureResourceDesc3.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+	textureResourceDesc3.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+	textureResourceDesc3.Width = textureWidth;
+	textureResourceDesc3.Height = textureHeight;
+	textureResourceDesc3.DepthOrArraySize = 1;
+	textureResourceDesc3.MipLevels = 1;
+	textureResourceDesc3.SampleDesc.Count = 1;
+	
+
 	// --テクスチャバッファの生成-- //
 	ID3D12Resource* texBuff = nullptr;
 	result = dxMa->device->CreateCommittedResource(
@@ -381,6 +371,17 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		D3D12_RESOURCE_STATE_GENERIC_READ,
 		nullptr,
 		IID_PPV_ARGS(&texBuff2)
+	);
+
+	// --テクスチャバッファの生成-- //
+	ID3D12Resource* texBuff3 = nullptr;
+	result = dxMa->device->CreateCommittedResource(
+		&textureHeapProp,
+		D3D12_HEAP_FLAG_NONE,
+		&textureResourceDesc3,
+		D3D12_RESOURCE_STATE_GENERIC_READ,
+		nullptr,
+		IID_PPV_ARGS(&texBuff3)
 	);
 
 	// --全ミップマップについて-- //
@@ -416,6 +417,18 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		);
 		assert(SUCCEEDED(result));
 	}
+
+	// --テクスチャバッファにデータ転送-- //
+	result = texBuff3->WriteToSubresource(
+		0,
+		nullptr,
+		imageData,
+		sizeof(XMFLOAT4) * textureWidth,
+		sizeof(XMFLOAT4) * imageDataCount
+	);
+	assert(SUCCEEDED(result));
+
+	delete[] imageData;
 
 	// --SRVの最大個数-- //
 	const size_t kMaxSRVCount = 2056;
@@ -463,6 +476,19 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	// --ハンドルを1つ進める-- //
 	srvHandle.ptr += descriptorSize * 1;
 
+	// --シェーダリソースビュー設定-- //
+	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc3{};
+	srvDesc3.Format = textureResourceDesc3.Format;
+	srvDesc3.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+	srvDesc3.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+	srvDesc3.Texture2D.MipLevels = textureResourceDesc3.MipLevels;
+
+	// --ハンドルの指す①にシェーダーリソースビュー作成-- //
+	dxMa->device->CreateShaderResourceView(texBuff3, &srvDesc3, srvHandle);
+
+	// --ハンドルを1つ進める-- //
+	srvHandle.ptr += descriptorSize * 1;
+
 	// --CBV（コンスタントバッファビュー）の設定-- //
 	D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc{};
 
@@ -475,178 +501,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	descriptorRange.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
 	descriptorRange.BaseShaderRegister = 0;// -> テクスチャレジスタ0番
 	descriptorRange.OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
-
-	/// --頂点データ-- ///
-#pragma region
-
-	Vertex vertices[] = {
-		// --前面
-		{{ -5.0f, -5.0f, -5.0f}, {}, {0.0f, 1.0f}},// -> 左下 0
-		{{ -5.0f,  5.0f, -5.0f}, {}, {0.0f, 0.0f}},// -> 左上 1
-		{{  5.0f, -5.0f, -5.0f}, {}, {1.0f, 1.0f}},// -> 右下 2
-		{{  5.0f,  5.0f, -5.0f}, {}, {1.0f, 0.0f}},// -> 右上 3
-
-		// --後面
-		{{ -5.0f, -5.0f,  5.0f}, {}, {0.0f, 1.0f}},// -> 左下 4
-		{{ -5.0f,  5.0f,  5.0f}, {}, {0.0f, 0.0f}},// -> 左上 5
-		{{  5.0f, -5.0f,  5.0f}, {}, {1.0f, 1.0f}},// -> 右下 6
-		{{  5.0f,  5.0f,  5.0f}, {}, {1.0f, 0.0f}},// -> 右上 7
-
-		// --左面
-		{{ -5.0f, -5.0f, -5.0f}, {}, {0.0f, 1.0f}},// -> 左下 8
-		{{ -5.0f, -5.0f,  5.0f}, {}, {0.0f, 0.0f}},// -> 左上 9
-		{{ -5.0f,  5.0f, -5.0f}, {}, {1.0f, 1.0f}},// -> 右下 10
-		{{ -5.0f,  5.0f,  5.0f}, {}, {1.0f, 0.0f}},// -> 右上 11
-
-		// --右面
-		{{  5.0f, -5.0f, -5.0f}, {}, {0.0f, 1.0f}},// -> 左下 12
-		{{  5.0f, -5.0f,  5.0f}, {}, {0.0f, 0.0f}},// -> 左上 13
-		{{  5.0f,  5.0f, -5.0f}, {}, {1.0f, 1.0f}},// -> 右下 14
-		{{  5.0f,  5.0f,  5.0f}, {}, {1.0f, 0.0f}},// -> 右上 15
-
-		// --下面
-		{{ -5.0f, -5.0f, -5.0f}, {}, {0.0f, 1.0f}},// -> 左下 16
-		{{  5.0f, -5.0f, -5.0f}, {}, {0.0f, 0.0f}},// -> 左上 17
-		{{ -5.0f, -5.0f,  5.0f}, {}, {1.0f, 1.0f}},// -> 右下 18
-		{{  5.0f, -5.0f,  5.0f}, {}, {1.0f, 0.0f}},// -> 右上 19
-
-		// --上面
-		{{ -5.0f,  5.0f, -5.0f}, {}, {0.0f, 1.0f}},// -> 左下 20
-		{{  5.0f,  5.0f, -5.0f}, {}, {0.0f, 0.0f}},// -> 左上 21
-		{{ -5.0f,  5.0f,  5.0f}, {}, {1.0f, 1.0f}},// -> 右下 22
-		{{  5.0f,  5.0f,  5.0f}, {}, {1.0f, 0.0f}},// -> 右上 23
-	};
-
-#pragma endregion
-	/// --END-- ///
-
-	uint16_t indices[] = {
-		// --前面
-		0, 1, 2,// -> 三角形1つ目
-		2, 1, 3,// -> 三角形2つ目
-
-		// --後面
-		6, 5, 4,// -> 三角形3つ目
-		5, 6, 7,// -> 三角形4つ目
-
-		// --左面
-		8,  9, 10,// -> 三角形5つ目
-		11, 10, 9,// -> 三角形6つ目
-
-		// --右面
-		14, 13, 12,// -> 三角形8つ目
-		13, 14, 15,// -> 三角形7つ目
-
-		// --下面
-		16, 17, 18,// -> 三角形9つ目
-		19, 18, 17,// -> 三角形10つ目
-
-		// --上面
-		22, 21, 20,// -> 三角形11つ目
-		21, 22, 23,// -> 三角形12つ目
-	};
-
-	// --頂点データ全体のサイズ = 頂点データ一つ分のサイズ * 頂点データの要素数-- //
-	UINT sizeVB = static_cast<UINT>(sizeof(vertices[0]) * _countof(vertices));
-
-	/// --頂点バッファの確保-- ///
-#pragma region
-
-	// --頂点バッファの設定-- //
-	D3D12_HEAP_PROPERTIES heapProp{}; // ヒープ設定
-	heapProp.Type = D3D12_HEAP_TYPE_UPLOAD; // GPUへの転送用
-
-	// --リソース設定-- //
-	D3D12_RESOURCE_DESC resDesc{};
-	resDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
-	resDesc.Width = sizeVB; // 頂点データ全体のサイズ
-	resDesc.Height = 1;
-	resDesc.DepthOrArraySize = 1;
-	resDesc.MipLevels = 1;
-	resDesc.SampleDesc.Count = 1;
-	resDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
-
-	// --頂点バッファの生成-- //
-	ID3D12Resource* vertBuff = nullptr;
-	result = dxMa->device->CreateCommittedResource(
-		&heapProp, // ヒープ設定
-		D3D12_HEAP_FLAG_NONE,
-		&resDesc, // リソース設定
-		D3D12_RESOURCE_STATE_GENERIC_READ,
-		nullptr,
-		IID_PPV_ARGS(&vertBuff));
-	assert(SUCCEEDED(result));
-
-#pragma endregion
-	/// --END-- ///
-
-	// --法線の計算-- //
-	for (size_t i = 0; i < _countof(indices) / 3; i++) {
-		// --三角形のインデックスを取り出して、一時的な変数に入れる
-		unsigned short index0 = indices[i * 3 + 0];
-		unsigned short index1 = indices[i * 3 + 1];
-		unsigned short index2 = indices[i * 3 + 2];
-
-		// --三角形を構成する頂点座標をベクトルに代入
-		XMVECTOR p0 = XMLoadFloat3(&vertices[index0].pos);
-		XMVECTOR p1 = XMLoadFloat3(&vertices[index1].pos);
-		XMVECTOR p2 = XMLoadFloat3(&vertices[index2].pos);
-
-		// --p0->p1ベクトル、p0->p2ベクトルを計算（ベクトルの減算）
-		XMVECTOR v1 = XMVectorSubtract(p1, p0);
-		XMVECTOR v2 = XMVectorSubtract(p2, p0);
-
-		// --外積は両方から垂直なベクトル
-		XMVECTOR normal = XMVector3Cross(v1, v2);
-
-		// --正規化
-		normal = XMVector3Normalize(normal);
-
-		// --求めた法線を頂点データに代入
-		XMStoreFloat3(&vertices[index0].normal, normal);
-		XMStoreFloat3(&vertices[index1].normal, normal);
-		XMStoreFloat3(&vertices[index2].normal, normal);
-	}
-
-	/// --頂点バッファへのデータ転送-- ///
-#pragma region
-
-	// --GPU上のバッファに対応した仮想メモリ(メインメモリ上)を取得-- //
-	Vertex* vertMap = nullptr;
-
-	// --Map処理でメインメモリとGPUのメモリを紐づける-- //
-	result = vertBuff->Map(0, nullptr, (void**)&vertMap);
-	assert(SUCCEEDED(result));
-
-	// --全頂点に対して-- //
-	for (int i = 0; i < _countof(vertices); i++)
-	{
-		vertMap[i] = vertices[i]; // 座標をコピー
-	}
-
-	// --繋がりを解除-- //
-	vertBuff->Unmap(0, nullptr);
-
-#pragma endregion
-	/// --END-- ///
-
-	/// --頂点バッファビューの作成-- ///
-#pragma region
-
-	// --頂点バッファビューの作成-- //
-	D3D12_VERTEX_BUFFER_VIEW vbView{};
-
-	// --GPU仮想アドレス-- //
-	vbView.BufferLocation = vertBuff->GetGPUVirtualAddress();
-
-	// --頂点バッファのサイズ-- //
-	vbView.SizeInBytes = sizeVB;
-
-	// --頂点1つ分のデータサイズ-- //
-	vbView.StrideInBytes = sizeof(vertices[0]);
-
-#pragma endregion
-	/// --END-- ///
 
 	/// --シェーダーの読み込みとコンパイル-- ///
 #pragma region
@@ -882,50 +736,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 #pragma endregion
 	/// --END-- ///
 
-	// --インデックスデータ全体のサイズ-- //
-	UINT sizeIB = static_cast<UINT>(sizeof(uint16_t) * _countof(indices));
-
-	// --リソース設定-- //
-	resDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
-	resDesc.Width = sizeIB; // インデックス情報が入る分のサイズ
-	resDesc.Height = 1;
-	resDesc.DepthOrArraySize = 1;
-	resDesc.MipLevels = 1;
-	resDesc.SampleDesc.Count = 1;
-	resDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
-
-	// --インデックスバッファの生成-- //
-	ID3D12Resource* indexBuff = nullptr;
-	result = dxMa->device->CreateCommittedResource(
-		&heapProp,// -> ヒープ設定
-		D3D12_HEAP_FLAG_NONE,
-		&resDesc,// -> リソース設定
-		D3D12_RESOURCE_STATE_GENERIC_READ,
-		nullptr,
-		IID_PPV_ARGS(&indexBuff)
-	);
-
-	// --インデックスバッファをマッピング-- //
-	uint16_t* indexMap = nullptr;
-	result = indexBuff->Map(0, nullptr, (void**)&indexMap);
-
-	// --全インデックスに対して-- //
-	for (size_t i = 0; i < _countof(indices); i++)
-	{
-		indexMap[i] = indices[i];
-	}
-
-	// --マッピング解除-- //
-	indexBuff->Unmap(0, nullptr);
-
-	// --インデックスバッファビュー作成-- //
-	D3D12_INDEX_BUFFER_VIEW ibView{};
-	ibView.BufferLocation = indexBuff->GetGPUVirtualAddress();
-	ibView.Format = DXGI_FORMAT_R16_UINT;
-	ibView.SizeInBytes = sizeIB;
-
-#pragma endregion
-
 	// --初期化-- //
 	float angle = 0.0f;
 
@@ -937,6 +747,36 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 
 	// --座標
 	XMFLOAT3 position = { 0.0f, 0.0f, 0.0f };
+
+	// --3Dオブジェクトの数-- //
+	const size_t kObjectCount = 50;
+
+	// 3Dオブジェクトの配列
+	Object3D object3ds[kObjectCount];
+
+	// --配列内の全オブジェクトに対して-- //
+	for (size_t i = 0; i < _countof(object3ds); i++) {
+		// --初期化
+		object3ds[i].Initialize(dxMa->device.Get());
+
+		// --ここからは親子構造のサンプル
+		// 先頭以外なら
+		if (i > 0) {
+			// --1つ前のオブジェクトを親オブジェクトとする
+			object3ds[i].parent = &object3ds[i - 1];
+
+			// --親オブジェクトの9割の大きさ
+			object3ds[i].scale = { 0.9f, 0.9f, 0.9f };
+
+			// --親オブジェクトに対してZ軸まわりに30度回転
+			object3ds[i].rotation = { 0.0f, 0.0f, XMConvertToRadians(30.0f) };
+
+			// --親オブジェクトに対してZ方向に-8.0ずらす
+			object3ds[i].position = { 0.0f, 0.0f, -8.0f };
+		}
+	}
+
+	XMFLOAT4 color = { 1.0f, 1.0f, 1.0f, 1.0f };
 
 	// --ゲームループ-- //
 	while (true)
@@ -1006,6 +846,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 			object3ds[i].Update(matView, matProjection);
 		}
 
+		color.x -= 0.01f;
+
+		constMapMaterial->color = color;
+
 
 		dxMa->GraphicsCommandStart();
 
@@ -1073,11 +917,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 
 		// --2枚目を指し示すようにしたSRVのハンドルをルートパラメータ1番に設定-- //
 		srvGpuHandle.ptr += descriptorSize;
+		srvGpuHandle.ptr += descriptorSize;
 		dxMa->commandList->SetGraphicsRootDescriptorTable(1, srvGpuHandle);
 
 		// --全オブジェクトについての処理-- //
 		for (size_t i = 0; i < _countof(object3ds); i++) {
-			object3ds[i].Draw(dxMa->commandList, vbView, ibView, _countof(indices));
+			object3ds[i].Draw(dxMa->commandList);
 		}
 
 #pragma endregion
