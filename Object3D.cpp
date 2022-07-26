@@ -1,17 +1,21 @@
 #include "Object3D.h"
 
 // --コンストラクタ-- //
-Object3D::Object3D() : constBuffTransform(nullptr), constMapTransform(nullptr),
-scale{ 1.0f, 1.0f, 1.0f }, rotation{}, position{}, matWorld{}, parent(nullptr)
+Object::Object() : constBuffTransform(nullptr), constMapTransform(nullptr),
+scale{ 1.0f, 1.0f, 1.0f }, rotation{}, position{}, matWorld{}, parent(nullptr),
+constBuffMaterial(nullptr), constMapMaterial(nullptr), color{1.0f, 1.0f, 1.0f, 1.0f}
 {
 	vertex = new Vertex();
 }
 
 // --デストラクタ-- //
-Object3D::~Object3D() {}
+Object::~Object() {}
 
 // --初期化処理-- //
-void Object3D::Initialize(ID3D12Device* device) {
+void Object::Initialize(ID3D12Device* device) {
+
+	this->device = device;
+
 	HRESULT result;
 
 	// --定数バッファのヒープ設定
@@ -42,6 +46,81 @@ void Object3D::Initialize(ID3D12Device* device) {
 	result = constBuffTransform->Map(0, nullptr, (void**)&constMapTransform);
 	assert(SUCCEEDED(result));
 
+	{
+		// --ヒープ設定-- //
+		D3D12_HEAP_PROPERTIES cbHeapProp{};
+		cbHeapProp.Type = D3D12_HEAP_TYPE_UPLOAD;// -> GPUへの転送用
+
+		// --リソース設定-- //
+		D3D12_RESOURCE_DESC cbResourceDesc{};
+		cbResourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+		cbResourceDesc.Width = (sizeof(ConstBufferDataMaterial) + 0xff) & ~0xff;// -> 256バイトアラインメント
+		cbResourceDesc.Height = 1;
+		cbResourceDesc.DepthOrArraySize = 1;
+		cbResourceDesc.MipLevels = 1;
+		cbResourceDesc.SampleDesc.Count = 1;
+		cbResourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+
+		// --定数バッファの生成-- //
+		result = device->CreateCommittedResource(
+			&cbHeapProp,// -> ヒープ設定
+			D3D12_HEAP_FLAG_NONE,
+			&cbResourceDesc,// -> リソース設定
+			D3D12_RESOURCE_STATE_GENERIC_READ,
+			nullptr,
+			IID_PPV_ARGS(&constBuffMaterial)
+		);
+
+		// --マッピング-- //
+		result = constBuffMaterial->Map(0, nullptr, (void**)&constMapMaterial);
+		assert(SUCCEEDED(result));
+	}
+}
+
+// --更新処理-- //
+void Object::Update(XMMATRIX& matView, XMMATRIX& matProjection) {
+	XMMATRIX matScale, matRot, matTrans;
+
+	// --スケール、回転、平行移動行列の計算-- //
+	{
+		matScale = XMMatrixScaling(scale.x, scale.y, scale.z);
+		matRot = XMMatrixIdentity();
+		matRot *= XMMatrixRotationZ(rotation.z);
+		matRot *= XMMatrixRotationX(rotation.x);
+		matRot *= XMMatrixRotationY(rotation.y);
+		matTrans = XMMatrixTranslation(position.x, position.y, position.z);
+	}
+
+	// --ワールド行列の合成-- //
+	{
+		// --変形のリセット
+		matWorld = XMMatrixIdentity();
+
+		// --ワールド行列にスケーリングを反映
+		matWorld *= matScale;
+
+		// --ワールド行列に回転を反映
+		matWorld *= matRot;
+
+		// --ワールド行列に平行移動を反映
+		matWorld *= matTrans;
+
+		// --親オブジェクトがあれば
+		if (parent != nullptr) {
+			// 親オブジェクトのワールド行列を掛ける
+			matWorld *= parent->matWorld;
+		}
+	}
+
+	// --定数バッファへデータ転送-- //
+	constMapTransform->mat = matWorld * matView * matProjection;
+
+	// --色を適用-- //
+	constMapMaterial->color = color;
+}
+
+// --頂点データに立方体の情報を設定-- //
+void Object::CubeSetVertex() {
 	/// --立方体になるように頂点を設定-- ///
 #pragma region
 
@@ -119,51 +198,128 @@ void Object3D::Initialize(ID3D12Device* device) {
 
 	vertex->Initialize(device);
 
+	shape = "Cube";
+
 #pragma endregion
 	/// --END-- ///
 }
 
-// --更新処理-- //
-void Object3D::Update(XMMATRIX& matView, XMMATRIX& matProjection) {
-	XMMATRIX matScale, matRot, matTrans;
+// --描画処理-- //
+void Object::DrawCube(ID3D12GraphicsCommandList* commandList) {
 
-	// --スケール、回転、平行移動行列の計算-- //
-	{
-		matScale = XMMatrixScaling(scale.x, scale.y, scale.z);
-		matRot = XMMatrixIdentity();
-		matRot *= XMMatrixRotationZ(rotation.z);
-		matRot *= XMMatrixRotationX(rotation.x);
-		matRot *= XMMatrixRotationY(rotation.y);
-		matTrans = XMMatrixTranslation(position.x, position.y, position.z);
-	}
+	// --立方体を設定-- //
+	if (shape != "Cube") CubeSetVertex();
 
-	// --ワールド行列の合成-- //
-	{
-		// --変形のリセット
-		matWorld = XMMatrixIdentity();
+	// --定数バッファビュー（CBV）の設定コマンド-- //
+	commandList->SetGraphicsRootConstantBufferView(0, constBuffMaterial->GetGPUVirtualAddress());
 
-		// --ワールド行列にスケーリングを反映
-		matWorld *= matScale;
+	// --頂点バッファの設定
+	commandList->IASetVertexBuffers(0, 1, &vertex->vbView);
 
-		// --ワールド行列に回転を反映
-		matWorld *= matRot;
+	// --インデックスバッファの設定
+	commandList->IASetIndexBuffer(&vertex->ibView);
 
-		// --ワールド行列に平行移動を反映
-		matWorld *= matTrans;
+	// --定数バッファビュー（CBV）の設定コマンド
+	commandList->SetGraphicsRootConstantBufferView(2, constBuffTransform->GetGPUVirtualAddress());
 
-		// --親オブジェクトがあれば
-		if (parent != nullptr) {
-			// 親オブジェクトのワールド行列を掛ける
-			matWorld *= parent->matWorld;
-		}
-	}
-
-	// --定数バッファへデータ転送-- //
-	constMapTransform->mat = matWorld * matView * matProjection;
+	// --描画コマンド
+	commandList->DrawIndexedInstanced(vertex->indices.size(), 1, 0, 0, 0);
 }
 
-// --描画処理-- //
-void Object3D::Draw(ID3D12GraphicsCommandList* commandList) {
+// --頂点データに三角形の情報を設定-- //
+void Object::TriangleSetVertex() {
+	/// --立方体になるように頂点を設定-- ///
+#pragma region
+
+	Vertices vertices[] = {
+		// --前面
+		{{ -5.0f, -2.5f, 0.0f}, {}, {0.0f, 1.0f}},// -> 左下 0
+		{{ 0.0f,  5.0f, 0.0f}, {}, {0.0f, 0.0f}},// -> 上 1
+		{{  5.0f, -2.5f, 0.0f}, {}, {1.0f, 1.0f}},// -> 右下 2
+	};
+
+	for (size_t i = 0; i < _countof(vertices); i++) {
+		vertex->vertices.push_back(vertices[i]);
+	}
+
+	uint16_t indices[] = {
+		// --前面
+		0, 1, 2,// -> 三角形1つ目
+	};
+
+	for (size_t i = 0; i < _countof(indices); i++) {
+		vertex->indices.push_back(indices[i]);
+	}
+
+	vertex->Initialize(device);
+
+	shape = "Triangle";
+
+#pragma endregion
+	/// --END-- ///
+}
+
+// --三角形描画処理-- //
+void Object::DrawTriangle(ID3D12GraphicsCommandList* commandList) {
+	// --三角形を設定-- //
+	if (shape != "Triangle") TriangleSetVertex();
+
+	// --定数バッファビュー（CBV）の設定コマンド-- //
+	commandList->SetGraphicsRootConstantBufferView(0, constBuffMaterial->GetGPUVirtualAddress());
+
+	// --頂点バッファの設定
+	commandList->IASetVertexBuffers(0, 1, &vertex->vbView);
+
+	// --インデックスバッファの設定
+	commandList->IASetIndexBuffer(&vertex->ibView);
+
+	// --定数バッファビュー（CBV）の設定コマンド
+	commandList->SetGraphicsRootConstantBufferView(2, constBuffTransform->GetGPUVirtualAddress());
+
+	// --描画コマンド
+	commandList->DrawIndexedInstanced(vertex->indices.size(), 1, 0, 0, 0);
+}
+
+// --頂点データに線の情報を設定-- //
+void Object::LineSetVertex() {
+	/// --立方体になるように頂点を設定-- ///
+#pragma region
+
+	Vertices vertices[] = {
+		// --前面
+		{{ 5.0f, 0.0f, 0.0f}, {}, {0.0f, 1.0f}},// -> 左 0
+		{{ -5.0f, 0.0f, 0.0f}, {}, {0.0f, 0.0f}},// -> 右 1
+	};
+
+	for (size_t i = 0; i < _countof(vertices); i++) {
+		vertex->vertices.push_back(vertices[i]);
+	}
+
+	uint16_t indices[] = {
+		// --前面
+		0, 1, // -> 三角形1つ目
+	};
+
+	for (size_t i = 0; i < _countof(indices); i++) {
+		vertex->indices.push_back(indices[i]);
+	}
+
+	vertex->Initialize(device);
+
+	shape = "Triangle";
+
+#pragma endregion
+	/// --END-- ///
+}
+
+// --線描画-- //
+void Object::DrawLine(ID3D12GraphicsCommandList* commandList) {
+	// --線を設定-- //
+	if (shape != "Line") TriangleSetVertex();
+
+	// --定数バッファビュー（CBV）の設定コマンド-- //
+	commandList->SetGraphicsRootConstantBufferView(0, constBuffMaterial->GetGPUVirtualAddress());
+
 	// --頂点バッファの設定
 	commandList->IASetVertexBuffers(0, 1, &vertex->vbView);
 

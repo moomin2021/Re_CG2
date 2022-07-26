@@ -152,7 +152,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	// --キーボード入力の初期化-- //
 	Input* input = new Input();
 	input->InitializeInput(win->w, win->hwnd);
-
 #pragma endregion
 
 	/////////////////////
@@ -163,48 +162,62 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 
 	HRESULT result;
 
-	// --定数バッファに送るデータをまとめた型-- //
-	struct ConstBufferDataMaterial
-	{
-		// 色（RGBA）
-		XMFLOAT4 color;
-	};
+	//// --定数バッファに送るデータをまとめた型-- //
+	//struct ConstBufferDataMaterial
+	//{
+	//	// 色（RGBA）
+	//	XMFLOAT4 color;
+	//};
 
-	ID3D12Resource* constBuffMaterial = nullptr;
-	ConstBufferDataMaterial* constMapMaterial = nullptr;
+	//ID3D12Resource* constBuffMaterial = nullptr;
+	//ConstBufferDataMaterial* constMapMaterial = nullptr;
 
-	{
-		// --ヒープ設定-- //
-		D3D12_HEAP_PROPERTIES cbHeapProp{};
-		cbHeapProp.Type = D3D12_HEAP_TYPE_UPLOAD;// -> GPUへの転送用
+	//ID3D12Resource* constBuffMaterial2 = nullptr;
+	//ConstBufferDataMaterial* constMapMaterial2 = nullptr;
 
-		// --リソース設定-- //
-		D3D12_RESOURCE_DESC cbResourceDesc{};
-		cbResourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
-		cbResourceDesc.Width = (sizeof(ConstBufferDataMaterial) + 0xff) & ~0xff;// -> 256バイトアラインメント
-		cbResourceDesc.Height = 1;
-		cbResourceDesc.DepthOrArraySize = 1;
-		cbResourceDesc.MipLevels = 1;
-		cbResourceDesc.SampleDesc.Count = 1;
-		cbResourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+	//{
+	//	// --ヒープ設定-- //
+	//	D3D12_HEAP_PROPERTIES cbHeapProp{};
+	//	cbHeapProp.Type = D3D12_HEAP_TYPE_UPLOAD;// -> GPUへの転送用
 
-		// --定数バッファの生成-- //
-		result = dxMa->device->CreateCommittedResource(
-			&cbHeapProp,// -> ヒープ設定
-			D3D12_HEAP_FLAG_NONE,
-			&cbResourceDesc,// -> リソース設定
-			D3D12_RESOURCE_STATE_GENERIC_READ,
-			nullptr,
-			IID_PPV_ARGS(&constBuffMaterial)
-		);
+	//	// --リソース設定-- //
+	//	D3D12_RESOURCE_DESC cbResourceDesc{};
+	//	cbResourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+	//	cbResourceDesc.Width = (sizeof(ConstBufferDataMaterial) + 0xff) & ~0xff;// -> 256バイトアラインメント
+	//	cbResourceDesc.Height = 1;
+	//	cbResourceDesc.DepthOrArraySize = 1;
+	//	cbResourceDesc.MipLevels = 1;
+	//	cbResourceDesc.SampleDesc.Count = 1;
+	//	cbResourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
 
-		// --マッピング-- //
-		result = constBuffMaterial->Map(0, nullptr, (void**)&constMapMaterial);
-		assert(SUCCEEDED(result));
+	//	// --定数バッファの生成-- //
+	//	result = dxMa->device->CreateCommittedResource(
+	//		&cbHeapProp,// -> ヒープ設定
+	//		D3D12_HEAP_FLAG_NONE,
+	//		&cbResourceDesc,// -> リソース設定
+	//		D3D12_RESOURCE_STATE_GENERIC_READ,
+	//		nullptr,
+	//		IID_PPV_ARGS(&constBuffMaterial)
+	//	);
 
-		// 値を書き込むと自動的に転送される
-		constMapMaterial->color = XMFLOAT4(1, 1, 1, 1.0f);// -> RGBAで半透明の赤
-	}
+	//	// --定数バッファの生成-- //
+	//	result = dxMa->device->CreateCommittedResource(
+	//		&cbHeapProp,// -> ヒープ設定
+	//		D3D12_HEAP_FLAG_NONE,
+	//		&cbResourceDesc,// -> リソース設定
+	//		D3D12_RESOURCE_STATE_GENERIC_READ,
+	//		nullptr,
+	//		IID_PPV_ARGS(&constBuffMaterial2)
+	//	);
+
+	//	// --マッピング-- //
+	//	result = constBuffMaterial->Map(0, nullptr, (void**)&constMapMaterial);
+	//	assert(SUCCEEDED(result));
+
+	//	// --マッピング-- //
+	//	result = constBuffMaterial2->Map(0, nullptr, (void**)&constMapMaterial2);
+	//	assert(SUCCEEDED(result));
+	//}
 
 	//// --定数バッファを生成-- //
 	//ID3D12Resource * constBuffTransform0 = nullptr;
@@ -634,15 +647,15 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	blenddesc.RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
 
 	// --アルファ値共通設定-- //
-	blenddesc.BlendEnable = true;// ----------------> ブレンドを有効する
+	blenddesc.BlendEnable = false;// ----------------> ブレンドを有効する
 	blenddesc.BlendOpAlpha = D3D12_BLEND_OP_ADD;// -> 加算
 	blenddesc.SrcBlendAlpha = D3D12_BLEND_ONE;// ---> ソースの値を100%使う
 	blenddesc.DestBlendAlpha = D3D12_BLEND_ZERO;// -> デストの値を0%使う
 
-	//// --加算合成-- //
-	//blenddesc.BlendOp = D3D12_BLEND_OP_ADD;// -> 加算
-	//blenddesc.SrcBlend = D3D12_BLEND_ONE;// ---> ソースの値を100%使う
-	//blenddesc.DestBlend = D3D12_BLEND_ONE;// --> デストの値を100%使う
+	// --加算合成-- //
+	blenddesc.BlendOp = D3D12_BLEND_OP_ADD;// -> 加算
+	blenddesc.SrcBlend = D3D12_BLEND_ONE;// ---> ソースの値を100%使う
+	blenddesc.DestBlend = D3D12_BLEND_ONE;// --> デストの値を100%使う
 
 	//// 減算合成
 	//blenddesc.BlendOp = D3D12_BLEND_OP_REV_SUBTRACT;// -> デストからソースを減算
@@ -654,10 +667,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	//blenddesc.SrcBlend = D3D12_BLEND_INV_DEST_COLOR;// -> 1.0f-デストカラーの値
 	//blenddesc.DestBlend = D3D12_BLEND_ZERO;// ----------> 使わない
 
-	// 半透明合成
-	blenddesc.BlendOp = D3D12_BLEND_OP_ADD;// ----------> 加算
-	blenddesc.SrcBlend = D3D12_BLEND_SRC_ALPHA;// ------> ソースのアルファ値
-	blenddesc.DestBlend = D3D12_BLEND_INV_SRC_ALPHA;// -> 1.0f-ソースのアルファ値
+	//// 半透明合成
+	//blenddesc.BlendOp = D3D12_BLEND_OP_ADD;// ----------> 加算
+	//blenddesc.SrcBlend = D3D12_BLEND_SRC_ALPHA;// ------> ソースのアルファ値
+	//blenddesc.DestBlend = D3D12_BLEND_INV_SRC_ALPHA;// -> 1.0f-ソースのアルファ値
 
 	// --頂点レイアウトの設定-- //
 	pipelineDesc.InputLayout.pInputElementDescs = inputLayout;
@@ -739,48 +752,28 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	// --初期化-- //
 	float angle = 0.0f;
 
-	// --スケーリング倍率
-	XMFLOAT3 scale = { 1.0f, 1.0f, 1.0f };
-
-	// --回転角
-	XMFLOAT3 rotation = { 0.0f, 0.0f, 0.0f };
-
-	// --座標
-	XMFLOAT3 position = { 0.0f, 0.0f, 0.0f };
-
 	// --3Dオブジェクトの数-- //
-	const size_t kObjectCount = 50;
+	const size_t kObjectCount = 3;
 
 	// 3Dオブジェクトの配列
-	Object3D object3ds[kObjectCount];
+	Object * object3ds = new Object[kObjectCount];
+
+	object3ds[0].position = { 0, 10, 0 };
+	object3ds[1].position = { 2, -5, 0 };
+	object3ds[2].position = { -2, -5, 0 };
 
 	// --配列内の全オブジェクトに対して-- //
-	for (size_t i = 0; i < _countof(object3ds); i++) {
+	for (size_t i = 0; i < kObjectCount; i++) {
 		// --初期化
 		object3ds[i].Initialize(dxMa->device.Get());
-
-		// --ここからは親子構造のサンプル
-		// 先頭以外なら
-		if (i > 0) {
-			// --1つ前のオブジェクトを親オブジェクトとする
-			object3ds[i].parent = &object3ds[i - 1];
-
-			// --親オブジェクトの9割の大きさ
-			object3ds[i].scale = { 0.9f, 0.9f, 0.9f };
-
-			// --親オブジェクトに対してZ軸まわりに30度回転
-			object3ds[i].rotation = { 0.0f, 0.0f, XMConvertToRadians(30.0f) };
-
-			// --親オブジェクトに対してZ方向に-8.0ずらす
-			object3ds[i].position = { 0.0f, 0.0f, -8.0f };
-		}
 	}
 
-	XMFLOAT4 color = { 1.0f, 1.0f, 1.0f, 1.0f };
+	XMFLOAT4 color = { 1.0f, 1.0f, 1.0f, 0.5f };
 
 	// --ゲームループ-- //
 	while (true)
 	{
+
 		// --メッセージがあるか-- //
 		if (PeekMessage(&win->msg, nullptr, 0, 0, PM_REMOVE))
 		{
@@ -804,22 +797,13 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 
 #pragma region
 
-
 		// --キーボード入力の更新処理-- //
 		input->UpdateInput();
 
-		// --数字の0キーが押されていたら-- //
-		if (input->PushKey(DIK_0))
-		{
-			// 出力ウィンドウに「Hit 0」と表示
-			OutputDebugStringA("Hit 0\n");
-		}
-
+		// --座標0, 0, 0をターゲットにカメラを回転-- //
 		if (input->PushKey(DIK_D) || input->PushKey(DIK_A))
 		{
 			angle += XMConvertToRadians(input->PushKey(DIK_D) - input->PushKey(DIK_A));
-			//if (input->PushKey(DIK_D)) angle += XMConvertToRadians(1.0f);
-			//else if (input->PushKey(DIK_A)) angle -= XMConvertToRadians(1.0f);
 
 			eye.x = -100 * sinf(angle);
 			eye.z = -100 * cosf(angle);
@@ -827,28 +811,41 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 			matView = XMMatrixLookAtLH(XMLoadFloat3(&eye), XMLoadFloat3(&target), XMLoadFloat3(&up));
 		}
 
-		// --いずれかのキーを押していれば
-		if (input->PushKey(DIK_UP) || input->PushKey(DIK_DOWN) || input->PushKey(DIK_RIGHT) || input->PushKey(DIK_LEFT))
-		{
-			//// 座標を移動する処理（Z座標）
-			//if      (input->PushKey(DIK_UP)) position.z += 1.0f;
-			//else if (input->PushKey(DIK_DOWN)) position.z -= 1.0f;
+		// --各オブジェクトの色の変更-- //
+		object3ds[0].color.x -= 0.01f;
+		if (object3ds[0].color.x <= 0.0f) object3ds[0].color.x = 1.0f;
+		object3ds[1].color.y -= 0.01f;
+		if (object3ds[1].color.y <= 0.0f) object3ds[1].color.y = 1.0f;
+		object3ds[2].color.z -= 0.01f;
+		if (object3ds[2].color.z <= 0.0f) object3ds[2].color.z = 1.0f;
 
-			//// 座標を移動する処理（X座標）
-			//if      (input->PushKey(DIK_RIGHT)) position.x += 1.0f;
-			//else if (input->PushKey(DIK_LEFT)) position.x -= 1.0f;
+		// --オブジェクトの操作-- //
+		object3ds[0].position.x += input->PushKey(DIK_RIGHT) - input->PushKey(DIK_LEFT);
+		object3ds[0].position.y += input->PushKey(DIK_UP) - input->PushKey(DIK_DOWN);
 
-			rotation.z += (input->PushKey(DIK_RIGHT) - input->PushKey(DIK_LEFT));
-			rotation.y += (input->PushKey(DIK_UP) - input->PushKey(DIK_DOWN));
-		}
-
-		for (size_t i = 0; i < _countof(object3ds); i++) {
+		// --全オブジェクトの更新処理-- //
+		for (size_t i = 0; i < kObjectCount; i++) {
 			object3ds[i].Update(matView, matProjection);
 		}
 
-		color.x -= 0.01f;
+		// --スペースを押すとソリッドモードからワイヤーフレームモードになる
+		pipelineDesc.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID; // ポリゴン内塗りつぶし
 
-		constMapMaterial->color = color;
+		if (input->TriggerMouseButton(M_CENTER)) {
+			pipelineDesc.RasterizerState.FillMode = D3D12_FILL_MODE_WIREFRAME; // ポリゴン内を塗りつぶさない
+		}
+
+		result = dxMa->device->CreateGraphicsPipelineState(&pipelineDesc, IID_PPV_ARGS(&pipelineState));
+		assert(SUCCEEDED(result));
+
+		// --ブレンドモードの切り替え-- //
+		if (input->TriggerKey(DIK_1)) {
+			if (blenddesc.BlendEnable == true) blenddesc.BlendEnable = false;
+			else blenddesc.BlendEnable = true;
+			result = dxMa->device->CreateGraphicsPipelineState(&pipelineDesc, IID_PPV_ARGS(&pipelineState));
+			assert(SUCCEEDED(result));
+		}
+
 
 
 		dxMa->GraphicsCommandStart();
@@ -898,13 +895,15 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		dxMa->commandList->SetGraphicsRootSignature(rootSignature.Get());
 
 		// --プリミティブ形状の設定コマンド-- //
+		dxMa->commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_LINESTRIP); // 線のストリップ
+
+
+
+		// --プリミティブ形状の設定コマンド-- //
 		dxMa->commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST); // 三角形リスト
 
 		//// --頂点バッファビューの設定コマンド-- //
 		//commandList->IASetVertexBuffers(0, 1, &vbView);
-
-		// --定数バッファビュー（CBV）の設定コマンド-- //
-		dxMa->commandList->SetGraphicsRootConstantBufferView(0, constBuffMaterial->GetGPUVirtualAddress());
 
 		// --SRVヒープの設定コマンド-- //
 		dxMa->commandList->SetDescriptorHeaps(1, &srvHeap);
@@ -916,14 +915,25 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		//commandList->SetGraphicsRootDescriptorTable(1, srvGpuHandle);
 
 		// --2枚目を指し示すようにしたSRVのハンドルをルートパラメータ1番に設定-- //
-		srvGpuHandle.ptr += descriptorSize;
-		srvGpuHandle.ptr += descriptorSize;
 		dxMa->commandList->SetGraphicsRootDescriptorTable(1, srvGpuHandle);
 
 		// --全オブジェクトについての処理-- //
-		for (size_t i = 0; i < _countof(object3ds); i++) {
-			object3ds[i].Draw(dxMa->commandList);
-		}
+		//for (size_t i = 0; i < kObjectCount; i++) {
+		//	object3ds[i].DrawCube(dxMa->commandList);
+		//}
+
+		object3ds[2].DrawTriangle(dxMa->commandList);
+
+		srvGpuHandle.ptr += descriptorSize;
+		dxMa->commandList->SetGraphicsRootDescriptorTable(1, srvGpuHandle);
+
+		object3ds[1].DrawTriangle(dxMa->commandList);
+
+		srvGpuHandle.ptr += descriptorSize;
+		dxMa->commandList->SetGraphicsRootDescriptorTable(1, srvGpuHandle);
+
+		object3ds[0].DrawCube(dxMa->commandList);
+
 
 #pragma endregion
 		/// --END-- ///
