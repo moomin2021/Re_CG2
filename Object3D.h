@@ -24,22 +24,25 @@ class Object {
 
 private:
 	// --定数バッファ（行列用）
-	ID3D12Resource * constBuffTransform;
+	ComPtr<ID3D12Resource> constBuffTransform;
 
 	// --定数バッファマップ（行列用）
-	ConstBufferDataTransform * constMapTransform;
+	ComPtr<ConstBufferDataTransform> constMapTransform;
 
-	ID3D12Resource* constBuffMaterial;
-	ConstBufferDataMaterial* constMapMaterial = nullptr;
+	ComPtr<ID3D12Resource> constBuffMaterial;
+	ComPtr<ConstBufferDataMaterial> constMapMaterial;
 
 	// --頂点データ-- //
-	Vertex * vertex;
+	ComPtr<Vertex> vertex;
 
 	// --デバイス-- //
-	ID3D12Device* device;
+	ComPtr<ID3D12Device> device;
+
+	// --SRV用デスクリプタヒープ-- //
+	ComPtr<ID3D12DescriptorHeap> srvHeap;
 
 	// --オブジェクトの形-- //
-	const char* shape = nullptr;
+	const char * shape;
 
 public:
 
@@ -55,11 +58,11 @@ public:
 	XMFLOAT4 color;
 
 	// --親オブジェクトへのポインタ
-	Object* parent;
+	ComPtr<Object> parent;
 
 public:
 	// --コンストラクタ-- //
-	Object();
+	Object(ID3D12DescriptorHeap* srvHeap);
 
 	// --デストラクタ-- //
 	~Object();
@@ -74,17 +77,17 @@ public:
 	void CubeSetVertex();
 
 	// --立方体描画処理-- //
-	void DrawCube(ID3D12GraphicsCommandList* commandList);
+	void DrawCube(ID3D12GraphicsCommandList* commandList, int textureHandle = 0);
 
 	// --頂点データに三角形の情報を設定-- //
 	void TriangleSetVertex();
 
 	// --三角形描画処理-- //
-	void DrawTriangle(ID3D12GraphicsCommandList* commandList);
+	void DrawTriangle(ID3D12GraphicsCommandList* commandList, int textureHandle = 0);
 
 	// --頂点データに線の情報を設定-- //
 	void LineSetVertex();
 
 	// --線描画-- //
-	void DrawLine(ID3D12GraphicsCommandList* commandList);
+	void DrawLine(ID3D12GraphicsCommandList* commandList, int textureHandle = 0);
 };

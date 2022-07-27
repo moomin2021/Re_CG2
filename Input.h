@@ -1,6 +1,8 @@
 #pragma once
 #include <dinput.h>
 #include "Vector2.h"
+#include <wrl.h>
+using namespace Microsoft::WRL;
 
 enum MouseButtonName {
 	M_LEFT,
@@ -30,8 +32,8 @@ private:
 	POINT p;
 
 	// --各デバイス-- //
-	IDirectInputDevice8 * keyBoardDev;
-	IDirectInputDevice8* mouseDev;
+	ComPtr<IDirectInputDevice8> keyBoardDev;
+	ComPtr<IDirectInputDevice8> mouseDev;
 
 public:
 	// --コンストラクタ-- //

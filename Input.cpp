@@ -4,7 +4,8 @@
 #pragma comment(lib, "dinput8.lib")
 #pragma comment(lib, "dxguid.lib")
 
-Input::Input() : keys{}, oldKeys{}, keyBoardDev(nullptr) {}
+Input::Input() : windowClassName{}, keys{}, oldKeys{}, mouse{}, oldMouse{}, p{},
+				keyBoardDev(nullptr), mouseDev(nullptr) {}
 
 // --デストラクタ-- //
 Input::~Input() {
@@ -43,7 +44,7 @@ void Input::InitializeInput(WNDCLASSEX w, HWND hwnd)
 	/// --DirectInputの初期化-- ///
 #pragma region
 
-	IDirectInput8 * directInput = nullptr;
+	ComPtr<IDirectInput8> directInput = nullptr;
 	result = DirectInput8Create(
 		w.hInstance, DIRECTINPUT_VERSION, IID_IDirectInput8,
 		(void **)&directInput, nullptr

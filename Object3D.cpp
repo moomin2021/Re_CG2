@@ -1,11 +1,11 @@
 #include "Object3D.h"
 
 // --コンストラクタ-- //
-Object::Object() : constBuffTransform(nullptr), constMapTransform(nullptr),
-scale{ 1.0f, 1.0f, 1.0f }, rotation{}, position{}, matWorld{}, parent(nullptr),
-constBuffMaterial(nullptr), constMapMaterial(nullptr), color{1.0f, 1.0f, 1.0f, 1.0f}
+Object::Object(ID3D12DescriptorHeap* srvHeap) : constBuffTransform(nullptr), constMapTransform(nullptr),
+constBuffMaterial(nullptr), constMapMaterial(nullptr), vertex(nullptr), device(nullptr), srvHeap(srvHeap),
+shape(nullptr), scale{}, rotation{}, position{}, matWorld{}, color{}, parent(nullptr)
 {
-	vertex = new Vertex();
+	
 }
 
 // --デストラクタ-- //
@@ -15,6 +15,8 @@ Object::~Object() {}
 void Object::Initialize(ID3D12Device* device) {
 
 	this->device = device;
+
+	vertex = new Vertex();
 
 	HRESULT result;
 
@@ -196,7 +198,7 @@ void Object::CubeSetVertex() {
 		vertex->indices.push_back(indices[i]);
 	}
 
-	vertex->Initialize(device);
+	vertex->Initialize(device.Get());
 
 	shape = "Cube";
 
@@ -205,10 +207,19 @@ void Object::CubeSetVertex() {
 }
 
 // --描画処理-- //
-void Object::DrawCube(ID3D12GraphicsCommandList* commandList) {
+void Object::DrawCube(ID3D12GraphicsCommandList* commandList, int textureHandle) {
 
 	// --立方体を設定-- //
 	if (shape != "Cube") CubeSetVertex();
+
+	// --SRVヒープのハンドルを-- //
+	D3D12_GPU_DESCRIPTOR_HANDLE srvGpuHandle = srvHeap->GetGPUDescriptorHandleForHeapStart();
+
+	// --ハンドルを1つ進める-- //
+	srvGpuHandle.ptr += textureHandle;
+
+	// --2枚目を指し示すようにしたSRVのハンドルをルートパラメータ1番に設定-- //
+	commandList->SetGraphicsRootDescriptorTable(1, srvGpuHandle);
 
 	// --定数バッファビュー（CBV）の設定コマンド-- //
 	commandList->SetGraphicsRootConstantBufferView(0, constBuffMaterial->GetGPUVirtualAddress());
@@ -251,7 +262,7 @@ void Object::TriangleSetVertex() {
 		vertex->indices.push_back(indices[i]);
 	}
 
-	vertex->Initialize(device);
+	vertex->Initialize(device.Get());
 
 	shape = "Triangle";
 
@@ -260,9 +271,18 @@ void Object::TriangleSetVertex() {
 }
 
 // --三角形描画処理-- //
-void Object::DrawTriangle(ID3D12GraphicsCommandList* commandList) {
+void Object::DrawTriangle(ID3D12GraphicsCommandList* commandList, int textureHandle) {
 	// --三角形を設定-- //
 	if (shape != "Triangle") TriangleSetVertex();
+
+	// --SRVヒープのハンドルを-- //
+	D3D12_GPU_DESCRIPTOR_HANDLE srvGpuHandle = srvHeap->GetGPUDescriptorHandleForHeapStart();
+
+	// --ハンドルを1つ進める-- //
+	srvGpuHandle.ptr += textureHandle;
+
+	// --2枚目を指し示すようにしたSRVのハンドルをルートパラメータ1番に設定-- //
+	commandList->SetGraphicsRootDescriptorTable(1, srvGpuHandle);
 
 	// --定数バッファビュー（CBV）の設定コマンド-- //
 	commandList->SetGraphicsRootConstantBufferView(0, constBuffMaterial->GetGPUVirtualAddress());
@@ -304,7 +324,7 @@ void Object::LineSetVertex() {
 		vertex->indices.push_back(indices[i]);
 	}
 
-	vertex->Initialize(device);
+	vertex->Initialize(device.Get());
 
 	shape = "Triangle";
 
@@ -313,9 +333,18 @@ void Object::LineSetVertex() {
 }
 
 // --線描画-- //
-void Object::DrawLine(ID3D12GraphicsCommandList* commandList) {
+void Object::DrawLine(ID3D12GraphicsCommandList* commandList, int textureHandle) {
 	// --線を設定-- //
 	if (shape != "Line") TriangleSetVertex();
+
+	// --SRVヒープのハンドルを-- //
+	D3D12_GPU_DESCRIPTOR_HANDLE srvGpuHandle = srvHeap->GetGPUDescriptorHandleForHeapStart();
+
+	// --ハンドルを1つ進める-- //
+	srvGpuHandle.ptr += textureHandle;
+
+	// --2枚目を指し示すようにしたSRVのハンドルをルートパラメータ1番に設定-- //
+	commandList->SetGraphicsRootDescriptorTable(1, srvGpuHandle);
 
 	// --定数バッファビュー（CBV）の設定コマンド-- //
 	commandList->SetGraphicsRootConstantBufferView(0, constBuffMaterial->GetGPUVirtualAddress());
