@@ -51,7 +51,7 @@ void DXManager::DXInitialize(HWND hwnd) {
 	std::vector<IDXGIAdapter4*> adapters;
 
 	// --ここに特定の名前を持つアダプターオブジェクトが入る-- //
-	ComPtr<IDXGIAdapter4> tmpAdapter = nullptr;
+	IDXGIAdapter4 * tmpAdapter = nullptr;
 
 	// --パフォーマンスが高いものから順に、全てのアダプターを列挙する-- //
 	for (UINT i = 0;
@@ -61,7 +61,7 @@ void DXManager::DXInitialize(HWND hwnd) {
 		i++)
 	{
 		// 動的配列に追加する
-		adapters.push_back(tmpAdapter.Get());
+		adapters.push_back(tmpAdapter);
 	}
 
 #pragma endregion
@@ -111,7 +111,7 @@ void DXManager::DXInitialize(HWND hwnd) {
 	for (size_t i = 0; i < _countof(levels); i++)
 	{
 		// 採用したアダプターでデバイスを生成
-		result = D3D12CreateDevice(tmpAdapter.Get(), levels[i],
+		result = D3D12CreateDevice(tmpAdapter, levels[i],
 			IID_PPV_ARGS(&device));
 		if (result == S_OK)
 		{
@@ -317,7 +317,7 @@ void DXManager::DXInitialize(HWND hwnd) {
 	depthClearValue.Format = DXGI_FORMAT_D32_FLOAT;// -> 深度値フォーマット
 
 	// --リソース生成-- //
-	ComPtr<ID3D12Resource> depthBuff = nullptr;
+	ID3D12Resource * depthBuff = nullptr;
 	result = device->CreateCommittedResource(
 		&depthHeapProp,
 		D3D12_HEAP_FLAG_NONE,
@@ -338,7 +338,7 @@ void DXManager::DXInitialize(HWND hwnd) {
 	dsvDesc.Format = DXGI_FORMAT_D32_FLOAT;// -> 深度値フォーマット
 	dsvDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
 	device->CreateDepthStencilView(
-		depthBuff.Get(),
+		depthBuff,
 		&dsvDesc,
 		dsvHeap->GetCPUDescriptorHandleForHeapStart()
 	);

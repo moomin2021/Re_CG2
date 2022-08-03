@@ -27,13 +27,14 @@ private:
 	ComPtr<ID3D12Resource> constBuffTransform;
 
 	// --定数バッファマップ（行列用）
-	ComPtr<ConstBufferDataTransform> constMapTransform;
+	ConstBufferDataTransform* constMapTransform;
 
 	ComPtr<ID3D12Resource> constBuffMaterial;
-	ComPtr<ConstBufferDataMaterial> constMapMaterial;
+
+	ConstBufferDataMaterial* constMapMaterial;
 
 	// --頂点データ-- //
-	ComPtr<Vertex> vertex;
+	Vertex* vertex;
 
 	// --デバイス-- //
 	ComPtr<ID3D12Device> device;
@@ -42,7 +43,7 @@ private:
 	ComPtr<ID3D12DescriptorHeap> srvHeap;
 
 	// --オブジェクトの形-- //
-	const char * shape;
+	const char* shape;
 
 public:
 
@@ -58,17 +59,17 @@ public:
 	XMFLOAT4 color;
 
 	// --親オブジェクトへのポインタ
-	ComPtr<Object> parent;
+	Object* parent;
 
 public:
 	// --コンストラクタ-- //
-	Object(ID3D12DescriptorHeap* srvHeap);
+	Object();
 
 	// --デストラクタ-- //
 	~Object();
 
 	// --初期化処理-- //
-	void Initialize(ID3D12Device* device);
+	void Initialize(ID3D12Device* device, ID3D12DescriptorHeap* srvHeap);
 
 	// --更新処理-- //
 	void Update(XMMATRIX& matView, XMMATRIX& matProjection);

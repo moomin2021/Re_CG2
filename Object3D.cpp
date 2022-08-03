@@ -1,20 +1,23 @@
 #include "Object3D.h"
+#include "Util.h"
 
 // --コンストラクタ-- //
-Object::Object(ID3D12DescriptorHeap* srvHeap) : constBuffTransform(nullptr), constMapTransform(nullptr),
-constBuffMaterial(nullptr), constMapMaterial(nullptr), vertex(nullptr), device(nullptr), srvHeap(srvHeap),
-shape(nullptr), scale{}, rotation{}, position{}, matWorld{}, color{}, parent(nullptr)
+Object::Object() : constBuffTransform(nullptr), constMapTransform(nullptr),
+constBuffMaterial(nullptr), constMapMaterial(nullptr), vertex(nullptr), device(nullptr), srvHeap(nullptr),
+shape(nullptr), scale{ 1.0f, 1.0f, 1.0f }, rotation{}, position{}, matWorld{}, color{ 0.9f, 0.9f, 0.9f, 1.0f }, parent(nullptr)
 {
-	
+
 }
 
 // --デストラクタ-- //
 Object::~Object() {}
 
 // --初期化処理-- //
-void Object::Initialize(ID3D12Device* device) {
+void Object::Initialize(ID3D12Device* device, ID3D12DescriptorHeap* srvHeap) {
 
 	this->device = device;
+
+	this->srvHeap = srvHeap;
 
 	vertex = new Vertex();
 
@@ -87,9 +90,9 @@ void Object::Update(XMMATRIX& matView, XMMATRIX& matProjection) {
 	{
 		matScale = XMMatrixScaling(scale.x, scale.y, scale.z);
 		matRot = XMMatrixIdentity();
-		matRot *= XMMatrixRotationZ(rotation.z);
-		matRot *= XMMatrixRotationX(rotation.x);
-		matRot *= XMMatrixRotationY(rotation.y);
+		matRot *= XMMatrixRotationZ(Util::Degree2Radian(rotation.z));
+		matRot *= XMMatrixRotationX(Util::Degree2Radian(rotation.x));
+		matRot *= XMMatrixRotationY(Util::Degree2Radian(rotation.y));
 		matTrans = XMMatrixTranslation(position.x, position.y, position.z);
 	}
 

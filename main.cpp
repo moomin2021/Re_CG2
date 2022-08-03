@@ -26,23 +26,23 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 {
 
 	// --ウィンドウ生成クラス-- //
-	ComPtr<Window> win = new Window();
+	Window * win = new Window();
 
 	// --ウィンドウの初期化-- //
 	win->WindowInitialize();
 
 	// --DirectX初期化クラス-- //
-	ComPtr<DXManager> dxMa = new DXManager(win->GetWidth(), win->GetHeight());
+	DXManager * dxMa = new DXManager(win->GetWidth(), win->GetHeight());
 
 	// --DirectX初期化処理-- //
 	dxMa->DXInitialize(win->hwnd);
 
 	// --キーボード入力の初期化-- //
-	ComPtr<Input> input = new Input();
+	Input * input = new Input();
 	input->InitializeInput(win->w, win->hwnd);
 
 	// --テクスチャクラス-- //
-	ComPtr<Texture> texture = new Texture(dxMa->device);
+	Texture * texture = new Texture(dxMa->device.Get());
 #pragma endregion
 
 	/////////////////////
@@ -77,9 +77,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	/// --シェーダーの読み込みとコンパイル-- ///
 #pragma region
 
-	ComPtr<ID3DBlob> vsBlob = nullptr; // 頂点シェーダオブジェクト
-	ComPtr<ID3DBlob> psBlob = nullptr; // ピクセルシェーダオブジェクト
-	ComPtr<ID3DBlob> errorBlob = nullptr; // エラーオブジェクト
+	ID3DBlob * vsBlob = nullptr; // 頂点シェーダオブジェクト
+	ID3DBlob * psBlob = nullptr; // ピクセルシェーダオブジェクト
+	ID3DBlob * errorBlob = nullptr; // エラーオブジェクト
 
 	// --頂点シェーダの読み込みとコンパイル-- //
 	result = D3DCompileFromFile(
@@ -301,7 +301,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	pipelineDesc.pRootSignature = rootSignature.Get();
 
 	// --パイプランステートの生成-- //
-	ComPtr<ID3D12PipelineState> pipelineState = nullptr;
+	ID3D12PipelineState * pipelineState = nullptr;
 	result = dxMa->device->CreateGraphicsPipelineState(&pipelineDesc, IID_PPV_ARGS(&pipelineState));
 	assert(SUCCEEDED(result));
 
@@ -316,9 +316,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	int reimuGraph = texture->LoadTexture(L"Resources/reimu.png");
 
 	// --床オブジェクトの初期化-- //
-	ComPtr<Object> floor = new Object(texture->srvHeap);
+	Object * floor = new Object();
 	floor->scale = { 10.0f, 0.05f, 10.0f };
-	floor->Initialize(dxMa->device.Get());
+	floor->Initialize(dxMa->device.Get(), texture->srvHeap);
 
 	// --カメラの角度-- //
 	float angleX = 90.0f, angleY = 90.0f;
@@ -358,26 +358,26 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		// --入力の更新処理-- //
 		input->UpdateInput();
 
-		// --カメラの操作-- //
-		{
-			eye.x += input->PushKey(DIK_D) - input->PushKey(DIK_A);
-			eye.y += input->PushKey(DIK_SPACE);
-			eye.z += input->PushKey(DIK_W) - input->PushKey(DIK_S);
+		//// --カメラの操作-- //
+		//{
+		//	eye.x += input->PushKey(DIK_D) - input->PushKey(DIK_A);
+		//	eye.y += input->PushKey(DIK_SPACE);
+		//	eye.z += input->PushKey(DIK_W) - input->PushKey(DIK_S);
 
-			// --マウスの移動量で角度を変更
-			angleX -= input->GetMouseVelosity().x * cameraRotaSpeed;
-			angleY += input->GetMouseVelosity().y * cameraRotaSpeed;
+		//	// --マウスの移動量で角度を変更
+		//	angleX -= input->GetMouseVelosity().x * cameraRotaSpeed;
+		//	angleY += input->GetMouseVelosity().y * cameraRotaSpeed;
 
-			// --上下の回転を制限する
-			angleY = Util::Clamp(angleY, 180.0f, 0.0f);
+		//	// --上下の回転を制限する
+		//	angleY = Util::Clamp(angleY, 180.0f, 0.0f);
 
-			// --注視点を変更
-			target.x = eye.x + cosf(Util::Degree2Radian(angleX)) * length;
-			target.y = eye.y + cosf(Util::Degree2Radian(angleY)) * length;
-			target.z = eye.z + sinf(Util::Degree2Radian(angleX)) * length;
+		//	// --注視点を変更
+		//	target.x = eye.x + cosf(Util::Degree2Radian(angleX)) * length;
+		//	target.y = eye.y + cosf(Util::Degree2Radian(angleY)) * length;
+		//	target.z = eye.z + sinf(Util::Degree2Radian(angleX)) * length;
 
-			matView = XMMatrixLookAtLH(XMLoadFloat3(&eye), XMLoadFloat3(&target), XMLoadFloat3(&up));
-		}
+		//	matView = XMMatrixLookAtLH(XMLoadFloat3(&eye), XMLoadFloat3(&target), XMLoadFloat3(&up));
+		//}
 
 		// --床オブジェクト更新処理-- //
 		floor->Update(matView, matProjection);
@@ -426,7 +426,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		/// --END-- ///
 
 		// --パイプラインステートとルートシグネチャの設定コマンド-- //
-		dxMa->commandList->SetPipelineState(pipelineState.Get());
+		dxMa->commandList->SetPipelineState(pipelineState);
 		dxMa->commandList->SetGraphicsRootSignature(rootSignature.Get());
 
 		// --プリミティブ形状の設定コマンド-- //
@@ -454,6 +454,14 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 
 #pragma endregion
 	}
+
+	// --ウィンドウクラスを登録解除-- //
+	UnregisterClass(win->w.lpszClassName, win->w.hInstance);
+
+	delete win;
+	delete dxMa;
+	delete input;
+	delete texture;
 
 	return 0;
 }

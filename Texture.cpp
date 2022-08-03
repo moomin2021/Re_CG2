@@ -11,7 +11,7 @@ Texture::Texture(ComPtr<ID3D12Device> device) {
 
 	/// --初期の真っ白なテクスチャを作成-- ///
 #pragma region
-	
+
 	// --自作画像データ-- //
 	const size_t textureWidth = 256;
 	const size_t textureHeight = 256;
@@ -92,7 +92,7 @@ Texture::Texture(ComPtr<ID3D12Device> device) {
 }
 
 // --テクスチャの読み込み-- //
-int Texture::LoadTexture(const wchar_t * szFile) {
+int Texture::LoadTexture(const wchar_t* szFile) {
 
 	// --関数が成功したかどうかを判別する用変数-- //
 	// ※DirectXの関数は、HRESULT型で成功したかどうかを返すものが多いのでこの変数を作成 //

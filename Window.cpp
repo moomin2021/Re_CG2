@@ -23,8 +23,8 @@ Window::Window() : windowWidth(1280), windowHeight(720), w{}, wrc{}, hwnd{}, msg
 // --デストラクタ-- //
 Window::~Window() {
 
-	// --ウィンドウクラスを登録解除-- //
-	UnregisterClass(w.lpszClassName, w.hInstance);
+	//// --ウィンドウクラスを登録解除-- //
+	//UnregisterClass(w.lpszClassName, w.hInstance);
 }
 
 // --ウィンドウ初期化-- //
