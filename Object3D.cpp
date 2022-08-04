@@ -4,7 +4,7 @@
 // --コンストラクタ-- //
 Object::Object() : constBuffTransform(nullptr), constMapTransform(nullptr),
 constBuffMaterial(nullptr), constMapMaterial(nullptr), vertex(nullptr), device(nullptr), srvHeap(nullptr),
-shape(nullptr), scale{ 1.0f, 1.0f, 1.0f }, rotation{}, position{}, matWorld{}, color{ 0.9f, 0.9f, 0.9f, 1.0f }, parent(nullptr)
+shape(nullptr), scale{ 1.0f, 1.0f, 1.0f }, rotation{}, position{}, matWorld{}, color{ 1.0f, 1.0f, 1.0f, 1.0f }, parent(nullptr)
 {
 
 }

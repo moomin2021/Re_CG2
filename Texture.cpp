@@ -1,7 +1,32 @@
 #include "Texture.h"
 
+// --インスタンスにNULLを代入-- //
+Texture * Texture::myInstance = nullptr;
+
 // --コンストラクタ-- //
-Texture::Texture(ComPtr<ID3D12Device> device) {
+Texture::Texture() : srvHeap(nullptr), device(nullptr), srvHandle{}, imageCount(0) {}
+
+// --インスタンスう読み込み-- //
+Texture* Texture::GetInstance() {
+	// --インスタンスが無かったら生成する-- //
+	if (myInstance == nullptr) myInstance = new Texture();
+
+	// --インスタンスを返す-- //
+	return myInstance;
+}
+
+// --インスタンス解放-- //
+void Texture::ReleseTexture() {
+	// --インスタンスが無かったら何もせずに終了する-- //
+	if (myInstance == nullptr) return;
+
+	// --インスタンス解放-- //
+	delete myInstance;
+	myInstance = nullptr;
+}
+
+// --初期化処理-- //
+void Texture::Initialize(ID3D12Device* device) {
 	// --デバイスを取得- //
 	this->device = device;
 

@@ -42,7 +42,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	input->InitializeInput(win->w, win->hwnd);
 
 	// --テクスチャクラス-- //
-	Texture * texture = new Texture(dxMa->device.Get());
+	Texture* texture = Texture::GetInstance();
+	texture->Initialize(dxMa->device.Get());
 #pragma endregion
 
 	/////////////////////
@@ -315,19 +316,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	int marioGraph = texture->LoadTexture(L"Resources/mario.jpg");
 	int reimuGraph = texture->LoadTexture(L"Resources/reimu.png");
 
-	// --床オブジェクトの初期化-- //
-	Object * floor = new Object();
-	floor->scale = { 10.0f, 0.05f, 10.0f };
-	floor->Initialize(dxMa->device.Get(), texture->srvHeap);
-
-	// --カメラの角度-- //
-	float angleX = 90.0f, angleY = 90.0f;
-
-	// --カメラの回転速度-- //
-	float cameraRotaSpeed = 0.05f;
-
-	// --カメラと注視点の距離-- //
-	float length = 10.0f;
+	// --オブジェクト-- //
+	Object* object = new Object();
+	object->Initialize(dxMa->device.Get(), texture->srvHeap);
 
 #pragma endregion
 	/// --END-- ///
@@ -358,29 +349,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		// --入力の更新処理-- //
 		input->UpdateInput();
 
-		//// --カメラの操作-- //
-		//{
-		//	eye.x += input->PushKey(DIK_D) - input->PushKey(DIK_A);
-		//	eye.y += input->PushKey(DIK_SPACE);
-		//	eye.z += input->PushKey(DIK_W) - input->PushKey(DIK_S);
-
-		//	// --マウスの移動量で角度を変更
-		//	angleX -= input->GetMouseVelosity().x * cameraRotaSpeed;
-		//	angleY += input->GetMouseVelosity().y * cameraRotaSpeed;
-
-		//	// --上下の回転を制限する
-		//	angleY = Util::Clamp(angleY, 180.0f, 0.0f);
-
-		//	// --注視点を変更
-		//	target.x = eye.x + cosf(Util::Degree2Radian(angleX)) * length;
-		//	target.y = eye.y + cosf(Util::Degree2Radian(angleY)) * length;
-		//	target.z = eye.z + sinf(Util::Degree2Radian(angleX)) * length;
-
-		//	matView = XMMatrixLookAtLH(XMLoadFloat3(&eye), XMLoadFloat3(&target), XMLoadFloat3(&up));
-		//}
-
-		// --床オブジェクト更新処理-- //
-		floor->Update(matView, matProjection);
+		// --オブジェクト更新処理-- //
+		object->Update(matView, matProjection);
 
 		// --グラフィックスコマンドスタート-- //
 		dxMa->GraphicsCommandStart();
@@ -441,8 +411,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		// --SRVヒープの設定コマンド-- //
 		dxMa->commandList->SetDescriptorHeaps(1, &texture->srvHeap);
 
-		// --床オブジェクト描画-- //
-		floor->DrawCube(dxMa->commandList);
+		// --オブジェクト描画処理-- //
+		object->DrawCube(dxMa->commandList, reimuGraph);
 
 #pragma endregion
 		/// --END-- ///

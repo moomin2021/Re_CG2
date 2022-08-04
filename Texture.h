@@ -2,9 +2,6 @@
 #include <d3dcompiler.h>
 #include <d3d12.h>
 #include <dxgi1_6.h>
-//#include <cassert>
-//#include <vector>
-//#include <string>
 #include <DirectXMath.h>
 using namespace DirectX;
 
@@ -18,7 +15,15 @@ using namespace DirectX;
 using namespace Microsoft::WRL;
 
 class Texture {
+///  --メンバ変数-- ///
+public:
+	// --SRV用デスクリプタヒープ-- //
+	ID3D12DescriptorHeap* srvHeap;
+
 private:
+	// --インスタンス-- //
+	static Texture* myInstance;
+
 	// --デバイス-- //
 	ComPtr<ID3D12Device> device;
 
@@ -28,15 +33,26 @@ private:
 	// --読み込む画像が何枚目か-- //
 	UINT imageCount;
 
-public:
-
-	// --SRV用デスクリプタヒープ-- //
-	ID3D12DescriptorHeap* srvHeap;
-
+/// --メンバ変数END-- ///
+///---------------- ///
+/// --メンバ関数-- ///
 public:
 	// --コンストラクタ-- //
-	Texture(ComPtr<ID3D12Device> device);
+	Texture();
+
+	// --インスタンス読み込み-- //
+	static Texture* GetInstance();
+
+	// --インスタンス解放-- //
+	void ReleseTexture();
+
+	// --初期化処理-- //
+	void Initialize(ID3D12Device* device);
 
 	// --テクスチャの読み込み-- //
-	int LoadTexture(const wchar_t * szFile);
+	int LoadTexture(const wchar_t* szFile);
+
+private:
+
+/// --メンバ関数END-- ///
 };
