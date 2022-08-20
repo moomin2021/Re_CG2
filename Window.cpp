@@ -17,18 +17,33 @@ LRESULT WindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 	return DefWindowProc(hwnd, msg, wparam, lparam);
 }
 
+// --インスタンスにNULLを代入-- //
+Window* Window::myInstance = nullptr;
+
 // --コンストラクタ-- //
 Window::Window() : windowWidth(1280), windowHeight(720), w{}, wrc{}, hwnd{}, msg{} {}
 
-// --デストラクタ-- //
-Window::~Window() {
+// --インスタンス読み込み-- //
+Window* Window::GetInstance() {
+	// --インスタンスが無かったら生成する-- //
+	if (myInstance == nullptr) myInstance = new Window();
 
-	//// --ウィンドウクラスを登録解除-- //
-	//UnregisterClass(w.lpszClassName, w.hInstance);
+	// --インスタンスを返す-- //
+	return myInstance;
+}
+
+// --インスタンス解放-- //
+void Window::Relese() {
+	// --インスタンスが無かったら何もせずに終了する-- //
+	if (myInstance == nullptr) return;
+
+	// --インスタンス解放-- //
+	delete myInstance;
+	myInstance = nullptr;
 }
 
 // --ウィンドウ初期化-- //
-void Window::WindowInitialize() {
+void Window::Initialize() {
 
 	// --ウィンドウクラスの設定-- //
 	w.cbSize = sizeof(WNDCLASSEX);// -> WNDCLASSEX構造体のサイズ
@@ -71,3 +86,9 @@ int Window::GetWidth() { return windowWidth; }
 
 // --縦幅
 int Window::GetHeight() { return windowHeight; }
+
+// --ウィンドウクラス参照-- //
+WNDCLASSEX Window::GetWNDCLASSEX() { return w; }
+
+// --ウィンドウオブジェクト参照-- //
+HWND Window::GetHWND() { return hwnd; }

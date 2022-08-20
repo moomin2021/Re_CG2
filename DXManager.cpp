@@ -1,17 +1,34 @@
 #include "DXManager.h"
 
+// --インスタンスにNULLを代入-- //
+DXManager* DXManager::myInstance = nullptr;
+
 // --コンストラクタ-- //
-DXManager::DXManager(int width, int height) : winWidth(width), winHeight(height), device(nullptr), dxgiFactory(nullptr), swapChain(nullptr),
+DXManager::DXManager() : device(nullptr), dxgiFactory(nullptr), swapChain(nullptr),
 cmdAllocator(nullptr), commandList(nullptr), commandQueue(nullptr), rtvHeap(nullptr),
 backBuffers{}, fence(nullptr), fenceVal(0), barrierDesc{}, dsvHeap(nullptr) {}
 
-// --デストラクタ-- //
-DXManager::~DXManager() {
+// --インスタンス読み込み-- //
+DXManager* DXManager::GetInstance() {
+	// --インスタンスが無かったら生成する-- //
+	if (myInstance == nullptr) myInstance = new DXManager();
 
+	// --インスタンスを返す-- //
+	return myInstance;
+}
+
+// --インスタンス解放-- //
+void DXManager::Relese() {
+	// --インスタンスが無かったら何もせずに終了する-- //
+	if (myInstance == nullptr) return;
+
+	// --インスタンス解放-- //
+	delete myInstance;
+	myInstance = nullptr;
 }
 
 // --DirectXの初期化処理-- //
-void DXManager::DXInitialize(HWND hwnd) {
+void DXManager::Initialize() {
 
 	// --関数が成功したかどうかを判別する用変数-- //
 	// ※DirectXの関数は、HRESULT型で成功したかどうかを返すものが多いのでこの変数を作成 //
@@ -37,6 +54,13 @@ void DXManager::DXInitialize(HWND hwnd) {
 
 #pragma endregion
 	/// --END-- ///
+
+	/// --WindowAPIクラスのインスタンス取得-- ///
+#pragma region
+
+	win = Window::GetInstance();
+
+#pragma endregion
 
 	/// --アダプタの列挙-- ///
 	/// ※PCにあるグラフィックボードを、仮想的なデバイスを含めて全部リストアップする ///
@@ -229,7 +253,7 @@ void DXManager::DXInitialize(HWND hwnd) {
 
 	// --スワップチェーンの生成-- //
 	result = dxgiFactory->CreateSwapChainForHwnd(
-		commandQueue.Get(), hwnd, &swapChainDesc, nullptr, nullptr,
+		commandQueue.Get(), win->GetHWND(), &swapChainDesc, nullptr, nullptr,
 		(IDXGISwapChain1**)&swapChain1);
 	assert(SUCCEEDED(result));
 
@@ -300,8 +324,8 @@ void DXManager::DXInitialize(HWND hwnd) {
 	// --リソース設定-- //
 	D3D12_RESOURCE_DESC depthResourceDesc{};
 	depthResourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
-	depthResourceDesc.Width = winWidth;// ---> レンダーターゲットに合わせる
-	depthResourceDesc.Height = winHeight;// -> レンダーターゲットに合わせる
+	depthResourceDesc.Width = win->GetWidth();// ---> レンダーターゲットに合わせる
+	depthResourceDesc.Height = win->GetHeight();// -> レンダーターゲットに合わせる
 	depthResourceDesc.DepthOrArraySize = 1;
 	depthResourceDesc.Format = DXGI_FORMAT_D32_FLOAT;// -> 深度値フォーマット
 	depthResourceDesc.SampleDesc.Count = 1;
@@ -441,3 +465,6 @@ void DXManager::GraphicsCommandEnd() {
 #pragma endregion
 	/// --END-- ///
 }
+
+// --デバイスを参照-- //
+ID3D12Device* DXManager::GetDevice() { return device.Get(); }

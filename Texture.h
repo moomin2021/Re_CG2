@@ -1,16 +1,17 @@
 #pragma once
-#include <d3dcompiler.h>
+
+// --Direct3D 12 用-- //
 #include <d3d12.h>
-#include <dxgi1_6.h>
+#pragma comment(lib, "d3d12.lib")
+
+// --数学関数-- //
 #include <DirectXMath.h>
 using namespace DirectX;
 
-#pragma comment(lib, "d3dcompiler.lib")
-#pragma comment(lib, "d3d12.lib")
-#pragma comment(lib, "dxgi.lib")
-
+// --DirectXTex-- //
 #include <DirectXteX.h>
 
+ // --ComPtr用-- //
 #include <wrl.h>
 using namespace Microsoft::WRL;
 
@@ -37,14 +38,11 @@ private:
 ///---------------- ///
 /// --メンバ関数-- ///
 public:
-	// --コンストラクタ-- //
-	Texture();
-
 	// --インスタンス読み込み-- //
 	static Texture* GetInstance();
 
 	// --インスタンス解放-- //
-	void ReleseTexture();
+	void Relese();
 
 	// --初期化処理-- //
 	void Initialize(ID3D12Device* device);
@@ -53,6 +51,8 @@ public:
 	int LoadTexture(const wchar_t* szFile);
 
 private:
+	// --コンストラクタ-- //
+	Texture();
 
 /// --メンバ関数END-- ///
 };

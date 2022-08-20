@@ -1,11 +1,11 @@
-// --マテリアル-- //
+// --定数バッファ用データ構造体（マテリアル）-- //
 cbuffer ConstBufferDataMaterial : register(b0)
 {
 	// --色（RGBA）
 	float4 color;
 }
 
-// --3D変換行列-- //
+// --定数バッファ用データ構造（3D変換行列）-- //
 cbuffer ConstBufferDataTransform : register(b1)
 {
 	// --3D変換行列

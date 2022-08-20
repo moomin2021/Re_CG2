@@ -4,7 +4,6 @@
 #include "Object3D.h"
 #include "Vertex.h"
 #include "Texture.h"
-#include <d3dcompiler.h>
 #include <d3d12.h>
 #include <dxgi1_6.h>
 #include <cassert>
@@ -13,7 +12,10 @@
 #include <DirectXMath.h>
 using namespace DirectX;
 
+// --シェーダの読み込みとコンパイル用-- //
+#include <d3dcompiler.h>
 #pragma comment(lib, "d3dcompiler.lib")
+
 #pragma comment(lib, "d3d12.lib")
 #pragma comment(lib, "dxgi.lib")
 
@@ -26,24 +28,24 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 {
 
 	// --ウィンドウ生成クラス-- //
-	Window * win = new Window();
+	Window * win = Window::GetInstance();
 
 	// --ウィンドウの初期化-- //
-	win->WindowInitialize();
+	win->Initialize();
 
 	// --DirectX初期化クラス-- //
-	DXManager * dxMa = new DXManager(win->GetWidth(), win->GetHeight());
+	DXManager * dxMa = DXManager::GetInstance();
 
 	// --DirectX初期化処理-- //
-	dxMa->DXInitialize(win->hwnd);
+	dxMa->Initialize();
 
 	// --キーボード入力の初期化-- //
 	Input * input = new Input();
-	input->InitializeInput(win->w, win->hwnd);
+	input->InitializeInput(win->GetWNDCLASSEX(), win->GetHWND());
 
 	// --テクスチャクラス-- //
 	Texture* texture = Texture::GetInstance();
-	texture->Initialize(dxMa->device.Get());
+	texture->Initialize(dxMa->GetDevice());
 #pragma endregion
 
 	/////////////////////
@@ -78,9 +80,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	/// --シェーダーの読み込みとコンパイル-- ///
 #pragma region
 
-	ID3DBlob * vsBlob = nullptr; // 頂点シェーダオブジェクト
-	ID3DBlob * psBlob = nullptr; // ピクセルシェーダオブジェクト
-	ID3DBlob * errorBlob = nullptr; // エラーオブジェクト
+	ComPtr<ID3DBlob> vsBlob = nullptr; // 頂点シェーダオブジェクト
+	ComPtr<ID3DBlob> psBlob = nullptr; // ピクセルシェーダオブジェクト
+	ComPtr<ID3DBlob> errorBlob = nullptr; // エラーオブジェクト
 
 	// --頂点シェーダの読み込みとコンパイル-- //
 	result = D3DCompileFromFile(
@@ -90,7 +92,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		"main", "vs_5_0", // エントリーポイント名、シェーダーモデル指定
 		D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION, // デバッグ用設定
 		0,
-		&vsBlob, &errorBlob);
+		vsBlob.GetAddressOf(), errorBlob.GetAddressOf());
 
 	// --エラーなら-- //
 	if (FAILED(result))
@@ -115,7 +117,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		"main", "ps_5_0", // エントリーポイント名、シェーダーモデル指定
 		D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION, // デバッグ用設定
 		0,
-		&psBlob, &errorBlob);
+		psBlob.GetAddressOf(), errorBlob.GetAddressOf());
 
 	// --エラーなら-- //
 	if (FAILED(result))
@@ -349,6 +351,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		// --入力の更新処理-- //
 		input->UpdateInput();
 
+		object->rotation.y += input->PushKey(DIK_A) - input->PushKey(DIK_D);
+
+		object->rotation.x += input->PushKey(DIK_W) - input->PushKey(DIK_S);
+
 		// --オブジェクト更新処理-- //
 		object->Update(matView, matProjection);
 
@@ -428,10 +434,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	// --ウィンドウクラスを登録解除-- //
 	UnregisterClass(win->w.lpszClassName, win->w.hInstance);
 
-	delete win;
-	delete dxMa;
+	win->Relese();
+	dxMa->Relese();
 	delete input;
-	delete texture;
+	texture->Relese();
 
 	return 0;
 }

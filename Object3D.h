@@ -26,11 +26,13 @@ private:
 	// --定数バッファ（行列用）
 	ComPtr<ID3D12Resource> constBuffTransform;
 
-	// --定数バッファマップ（行列用）
+	// --定数バッファ用データ構造（行列用）
 	ConstBufferDataTransform* constMapTransform;
 
+	// --定数バッファ（マテリアル）
 	ComPtr<ID3D12Resource> constBuffMaterial;
 
+	// --定数バッファ用データ構造（マテリアル）
 	ConstBufferDataMaterial* constMapMaterial;
 
 	// --頂点データ-- //

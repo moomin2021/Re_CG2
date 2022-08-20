@@ -6,7 +6,7 @@ Texture * Texture::myInstance = nullptr;
 // --コンストラクタ-- //
 Texture::Texture() : srvHeap(nullptr), device(nullptr), srvHandle{}, imageCount(0) {}
 
-// --インスタンスう読み込み-- //
+// --インスタンス読み込み-- //
 Texture* Texture::GetInstance() {
 	// --インスタンスが無かったら生成する-- //
 	if (myInstance == nullptr) myInstance = new Texture();
@@ -16,7 +16,7 @@ Texture* Texture::GetInstance() {
 }
 
 // --インスタンス解放-- //
-void Texture::ReleseTexture() {
+void Texture::Relese() {
 	// --インスタンスが無かったら何もせずに終了する-- //
 	if (myInstance == nullptr) return;
 
