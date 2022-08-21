@@ -1,10 +1,24 @@
 #pragma once
-#include "Vertex.h"
+// --Direct3D 12 用-- //
 #include <d3d12.h>
+#pragma comment(lib, "d3d12.lib")
+
+// --数学関数-- //
 #include <DirectXMath.h>
+using namespace DirectX;
+
+// --ComPtr用-- //
 #include <wrl.h>
 using namespace Microsoft::WRL;
-using namespace DirectX;
+
+// --頂点クラス-- //
+#include "Vertex.h"
+
+// --DirectX3Dクラス-- //
+#include "DXManager.h"
+
+// --テクスチャクラス-- //
+#include "Texture.h"
 
 // --定数バッファ用データ構造体-- //
 struct ConstBufferDataTransform
@@ -23,6 +37,12 @@ struct ConstBufferDataMaterial
 class Object {
 
 private:
+	// --DirectX3Dクラス-- //
+	DXManager* dxMa;
+
+	// --テクスチャクラス-- //
+	Texture* texture;
+
 	// --定数バッファ（行列用）
 	ComPtr<ID3D12Resource> constBuffTransform;
 
@@ -37,12 +57,6 @@ private:
 
 	// --頂点データ-- //
 	Vertex* vertex;
-
-	// --デバイス-- //
-	ComPtr<ID3D12Device> device;
-
-	// --SRV用デスクリプタヒープ-- //
-	ComPtr<ID3D12DescriptorHeap> srvHeap;
 
 	// --オブジェクトの形-- //
 	const char* shape;
@@ -71,7 +85,7 @@ public:
 	~Object();
 
 	// --初期化処理-- //
-	void Initialize(ID3D12Device* device, ID3D12DescriptorHeap* srvHeap);
+	void Initialize();
 
 	// --更新処理-- //
 	void Update(XMMATRIX& matView, XMMATRIX& matProjection);
@@ -80,17 +94,17 @@ public:
 	void CubeSetVertex();
 
 	// --立方体描画処理-- //
-	void DrawCube(ID3D12GraphicsCommandList* commandList, int textureHandle = 0);
+	void DrawCube(int textureHandle = 0);
 
 	// --頂点データに三角形の情報を設定-- //
 	void TriangleSetVertex();
 
 	// --三角形描画処理-- //
-	void DrawTriangle(ID3D12GraphicsCommandList* commandList, int textureHandle = 0);
+	void DrawTriangle(int textureHandle = 0);
 
 	// --頂点データに線の情報を設定-- //
 	void LineSetVertex();
 
 	// --線描画-- //
-	void DrawLine(ID3D12GraphicsCommandList* commandList, int textureHandle = 0);
+	void DrawLine(int textureHandle = 0);
 };

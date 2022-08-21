@@ -26,7 +26,7 @@ private:
 	static Texture* myInstance;
 
 	// --デバイス-- //
-	ComPtr<ID3D12Device> device;
+	ID3D12Device* device;
 
 	// --SRVヒープの先頭ハンドルを取得-- //
 	D3D12_CPU_DESCRIPTOR_HANDLE srvHandle;

@@ -4,7 +4,29 @@
 #pragma comment(lib, "dinput8.lib")
 #pragma comment(lib, "dxguid.lib")
 
-Input::Input() : windowClassName{}, keys{}, oldKeys{}, mouse{}, oldMouse{}, p{},
+// --インスタンスにNULLを代入-- //
+Input* Input::myInstance = nullptr;
+
+// --インスタンス読み込み-- //
+Input* Input::GetInstance() {
+	// --インスタンスが無かったら生成する-- //
+	if (myInstance == nullptr) myInstance = new Input();
+
+	// --インスタンスを返す-- //
+	return myInstance;
+}
+
+// --インスタンス解放-- //
+void Input::Relese() {
+	// --インスタンスが無かったら何もせずに終了する-- //
+	if (myInstance == nullptr) return;
+
+	// --インスタンス解放-- //
+	delete myInstance;
+	myInstance = nullptr;
+}
+
+Input::Input() : win(nullptr), keys{}, oldKeys{}, mouse{}, oldMouse{}, p{},
 				keyBoardDev(nullptr), mouseDev(nullptr) {}
 
 // --デストラクタ-- //
@@ -34,19 +56,19 @@ Input::~Input() {
 	/// --END-- ///
 }
 
-void Input::InitializeInput(WNDCLASSEX w, HWND hwnd)
+void Input::Initialize()
 {
 	HRESULT result;
 
-	// --ウィンドウクラスの名前をメンバ変数に保存-- //
-	windowClassName = w.lpszClassName;
+	// --WindowsAPIクラス-- //
+	win = Window::GetInstance();
 
 	/// --DirectInputの初期化-- ///
 #pragma region
 
 	ComPtr<IDirectInput8> directInput = nullptr;
 	result = DirectInput8Create(
-		w.hInstance, DIRECTINPUT_VERSION, IID_IDirectInput8,
+		win->w.hInstance, DIRECTINPUT_VERSION, IID_IDirectInput8,
 		(void **)&directInput, nullptr
 	);
 	assert(SUCCEEDED(result));
@@ -67,7 +89,7 @@ void Input::InitializeInput(WNDCLASSEX w, HWND hwnd)
 
 	// --排他制御レベルのセット-- //
 	result = keyBoardDev->SetCooperativeLevel(
-		hwnd, DISCL_FOREGROUND | DISCL_NONEXCLUSIVE | DISCL_NOWINKEY
+		win->GetHWND(), DISCL_FOREGROUND | DISCL_NONEXCLUSIVE | DISCL_NOWINKEY
 	);
 	assert(SUCCEEDED(result));
 
@@ -90,7 +112,7 @@ void Input::InitializeInput(WNDCLASSEX w, HWND hwnd)
 
 	// --排他制御レベルのセット-- //
 	result = mouseDev->SetCooperativeLevel(
-		hwnd, DISCL_FOREGROUND | DISCL_NONEXCLUSIVE | DISCL_NOWINKEY
+		win->GetHWND(), DISCL_FOREGROUND | DISCL_NONEXCLUSIVE | DISCL_NOWINKEY
 	);
 	assert(SUCCEEDED(result));
 
@@ -104,7 +126,7 @@ void Input::InitializeInput(WNDCLASSEX w, HWND hwnd)
 	directInput->Release();
 }
 
-void Input::UpdateInput()
+void Input::Update()
 {
 	/// --キーボード-- ///
 #pragma region
@@ -129,7 +151,7 @@ void Input::UpdateInput()
 
 	// --マウスの座標を取得-- //
 	GetCursorPos(&p);
-	ScreenToClient(FindWindowW(windowClassName, nullptr), &p);
+	ScreenToClient(FindWindowW(win->GetWNDCLASSEX().lpszClassName, nullptr), &p);
 
 #pragma endregion
 	/// --END-- ///

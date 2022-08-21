@@ -7,27 +7,27 @@
 #include <dxgi1_6.h>
 #pragma comment(lib, "dxgi.lib")
 
+// --シェーダの読み込みとコンパイル用-- //
+#include <d3dcompiler.h>
+#pragma comment(lib, "d3dcompiler.lib")
+
 // --式が真であることを判定する機能の追加-- //
 #include <cassert>
 
 // --シーケンスコンテナの一種-- //
 #include <vector>
 
- // --ComPtr用-- //
+// --文字列-- //
+#include <string>
+
+// --ComPtr用-- //
 #include <wrl.h>
 using namespace Microsoft::WRL;
-
-// --WindowsAPI-- //
-#include "Window.h"
 
 class DXManager {
 /// --メンバ変数-- ///
 public:
-	// --Windowクラス-- //
-	Window* win;
 
-	// --デバイス用-- //
-	ComPtr<ID3D12Device> device;
 	ComPtr<IDXGIFactory7> dxgiFactory;
 	ComPtr<IDXGISwapChain4> swapChain;
 	ComPtr<ID3D12CommandAllocator> cmdAllocator;
@@ -53,6 +53,18 @@ private:
 	// --インスタンス-- //
 	static DXManager* myInstance;
 
+	// --デバイス用-- //
+	ComPtr<ID3D12Device> device;
+
+	// --ルートシグネチャ-- //
+	ComPtr<ID3D12RootSignature> rootSignature;
+
+	// --パイプラインステート-- //
+	ID3D12PipelineState* pipelineState;
+
+	// --ウィンドウサイズ保存用変数-- //
+	int winWidth, winHeight;
+
 /// --メンバ変数END-- ///
 /// --------------- ///
 /// --メンバ関数-- ///
@@ -64,10 +76,10 @@ public:
 	void Relese();
 
 	// --DirectX初期化処理-- //
-	void Initialize();
+	void Initialize(HWND hwnd, int winWidth, int winHeight);
 
 	// --グラフィックスコマンド開始-- //
-	void GraphicsCommandStart();
+	void GraphicsCommandStart(ID3D12DescriptorHeap* srvHeap);
 
 	// --グラフィックスコマンド終了-- //
 	void GraphicsCommandEnd();

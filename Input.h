@@ -1,8 +1,16 @@
 #pragma once
+// --DirectXInput-- //
 #include <dinput.h>
+
+// --Vector2クラス-- //
 #include "Vector2.h"
+
+// --ComPtr用-- //
 #include <wrl.h>
 using namespace Microsoft::WRL;
+
+// --WindowsAPIクラス-- //
+#include "Window.h"
 
 enum MouseButtonName {
 	M_LEFT,
@@ -12,10 +20,15 @@ enum MouseButtonName {
 
 class Input
 {
+/// --メンバ変数-- ///
+public:
+
 private:
-	
-	// --ウィンドウクラスの名前-- //
-	LPCWSTR windowClassName;
+	// --インスタンス-- //
+	static Input* myInstance;
+
+	// --WindowsAPIクラス-- //
+	Window* win;
 
 	// --現在のキーボードの情報-- //
 	UINT8 keys[256];
@@ -35,18 +48,25 @@ private:
 	ComPtr<IDirectInputDevice8> keyBoardDev;
 	ComPtr<IDirectInputDevice8> mouseDev;
 
+/// --メンバ変数END-- ///
+/// --------------- ///
+/// --メンバ関数-- ///
 public:
-	// --コンストラクタ-- //
-	Input();
+
+	// --インスタンス読み込み-- //
+	static Input* GetInstance();
+
+	// --インスタンス解放-- //
+	void Relese();
 
 	// --デストラクタ-- //
 	~Input();
 
 	// キーボード入力の初期化
-	void InitializeInput(WNDCLASSEX w, HWND hwnd);
+	void Initialize();
 
 	// キーボード入力の更新処理
-	void UpdateInput();
+	void Update();
 
 	/// <summary>
 	/// 指定されたキーが押されていたら、1を返し、そうでなかったら0を返す
@@ -81,4 +101,10 @@ public:
 
 	// --マウスの移動量-- //
 	Vector2 GetMouseVelosity();
+
+private:
+	// --コンストラクタ-- //
+	Input();
+
+	/// --メンバ関数END-- ///
 };

@@ -134,6 +134,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Camera.cpp" />
+    <ClCompile Include="GameScene.cpp" />
     <ClCompile Include="Object3D.cpp" />
     <ClCompile Include="DXManager.cpp" />
     <ClCompile Include="Input.cpp" />
@@ -159,6 +161,8 @@
     </FxCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Camera.h" />
+    <ClInclude Include="GameScene.h" />
     <ClInclude Include="Object3D.h" />
     <ClInclude Include="DXManager.h" />
     <ClInclude Include="Input.h" />

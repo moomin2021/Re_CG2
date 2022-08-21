@@ -3,8 +3,6 @@
 // --インスタンスにNULLを代入-- //
 Texture * Texture::myInstance = nullptr;
 
-// --コンストラクタ-- //
-Texture::Texture() : srvHeap(nullptr), device(nullptr), srvHandle{}, imageCount(0) {}
 
 // --インスタンス読み込み-- //
 Texture* Texture::GetInstance() {
@@ -25,9 +23,12 @@ void Texture::Relese() {
 	myInstance = nullptr;
 }
 
+// --コンストラクタ-- //
+Texture::Texture() : device(nullptr), srvHeap(nullptr), srvHandle{}, imageCount(0) {}
+
 // --初期化処理-- //
 void Texture::Initialize(ID3D12Device* device) {
-	// --デバイスを取得- //
+	// --DirectXクラスのインスタンス取得-- //
 	this->device = device;
 
 	// --関数が成功したかどうかを判別する用変数-- //
@@ -67,7 +68,7 @@ void Texture::Initialize(ID3D12Device* device) {
 
 	// --テクスチャバッファの生成-- //
 	ID3D12Resource* texBuff = nullptr;
-	result = device->CreateCommittedResource(
+	result = this->device->CreateCommittedResource(
 		&textureHeapProp,
 		D3D12_HEAP_FLAG_NONE,
 		&textureResourceDesc,
@@ -99,7 +100,7 @@ void Texture::Initialize(ID3D12Device* device) {
 	srvHeapDesc.NumDescriptors = kMaxSRVCount;
 
 	// --設定をもとにSRV用デスクリプタヒープを生成-- //
-	result = device->CreateDescriptorHeap(&srvHeapDesc, IID_PPV_ARGS(&srvHeap));
+	result = this->device->CreateDescriptorHeap(&srvHeapDesc, IID_PPV_ARGS(&srvHeap));
 	assert(SUCCEEDED(result));
 
 	// --SRVヒープの先頭ハンドルを取得-- //
@@ -113,7 +114,7 @@ void Texture::Initialize(ID3D12Device* device) {
 	srvDesc.Texture2D.MipLevels = textureResourceDesc.MipLevels;
 
 	// --ハンドルの指す①にシェーダーリソースビュー作成-- //
-	device->CreateShaderResourceView(texBuff, &srvDesc, srvHandle);
+	this->device->CreateShaderResourceView(texBuff, &srvDesc, srvHandle);
 }
 
 // --テクスチャの読み込み-- //
@@ -166,7 +167,7 @@ int Texture::LoadTexture(const wchar_t* szFile) {
 
 	// --テクスチャバッファの生成-- //
 	ID3D12Resource* texBuff = nullptr;
-	result = device->CreateCommittedResource(
+	result = this->device->CreateCommittedResource(
 		&textureHeapProp,
 		D3D12_HEAP_FLAG_NONE,
 		&textureResourceDesc,
@@ -200,13 +201,13 @@ int Texture::LoadTexture(const wchar_t* szFile) {
 	srvDesc.Texture2D.MipLevels = textureResourceDesc.MipLevels;
 
 	// --CBV, SRV, UAVの1個分のサイズを取得-- //
-	UINT descriptorSize = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	UINT descriptorSize = this->device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
 	// --ハンドルを1つ進める-- //
 	srvHandle.ptr += descriptorSize;
 
 	// --ハンドルの指す①にシェーダーリソースビュー作成-- //
-	device->CreateShaderResourceView(texBuff, &srvDesc, srvHandle);
+	this->device->CreateShaderResourceView(texBuff, &srvDesc, srvHandle);
 
 	// --画像カウンタインクリメント-- //
 	imageCount++;
