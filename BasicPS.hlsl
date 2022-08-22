@@ -30,6 +30,9 @@ float4 main(VSOutput input) : SV_TARGET
 	float4 texcolor = float4(tex.Sample(smp, input.uv));
 
 	// --“_ŒõŒ¹-- //
+
+	float col;
+
 	{
 		// --“_ŒõŒ¹‚Ì•ûŒü-- //
 		float3 dir = ptLightPos - input.posw;
@@ -44,7 +47,7 @@ float4 main(VSOutput input) : SV_TARGET
 		float colA = saturate(1.0f / (attenuation.x + attenuation.y * len + attenuation.z * len * len));
 
 		// --ŠgU‚ÆŒ¸Š‚ğ‡¬‚·‚é-- //
-		float col = colD * colA;
+		col = colD * colA;
 	}
 
 	return float4(texcolor.rgb * col, texcolor.a) * color;

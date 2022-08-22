@@ -12,14 +12,14 @@
 // --カメラクラス-- //
 #include "Camera.h"
 
-// --平行光源クラス-- //
-#include "DirectionalLight.h"
-
 // --点光源クラス-- //
 #include "PointLight.h"
 
 // --ベクター-- //
 #include <vector>
+
+// --Vector3クラス-- //
+#include "Vector3.h"
 
 class GameScene {
 /// --メンバ変数-- ///
@@ -38,9 +38,6 @@ private:
 	// --カメラクラス-- //
 	Camera* camera;
 
-	// --平行光源クラス-- //
-	DirectionalLight* dirLight;
-
 	// --点光源クラス-- //
 	PointLight* pointLight;
 
@@ -48,9 +45,29 @@ private:
 	int marioGraph;
 	int reimuGraph;
 
-	// --オブジェクトクラス-- //
-	Object* floor;
-	Object* object[2];
+	// --プレイヤーオブジェクト-- //
+	Object* player;
+
+	// --カメラの角度-- //
+	float angleX, angleY;
+
+	// --前方ベクトル-- //
+	Vector3 forwardVec;
+
+	// --カメラの回転速度-- //
+	float cameraRotaSpeed;
+
+	// --プレイヤーの移動速度-- //
+	float playerSpeed;
+
+	// --カメラと注視点の距離-- //
+	float length;
+
+	// --床オブジェクト-- //
+	Object * floor[10][10];
+
+	// --ライトオブジェクト-- //
+	Object* lightObject;
 
 /// --メンバ変数END-- ///
 /// --------------- ///
