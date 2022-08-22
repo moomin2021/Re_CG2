@@ -12,6 +12,9 @@
 // --カメラクラス-- //
 #include "Camera.h"
 
+// --平行光源クラス-- //
+#include "DirectionalLight.h"
+
 class GameScene {
 /// --メンバ変数-- ///
 public:
@@ -28,6 +31,9 @@ private:
 
 	// --カメラクラス-- //
 	Camera* camera;
+
+	// --平行光源クラス-- //
+	DirectionalLight* dirLight;
 
 	// --テクスチャハンドル保存用変数-- //
 	int marioGraph;

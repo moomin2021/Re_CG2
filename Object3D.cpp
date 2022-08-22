@@ -121,6 +121,7 @@ void Object::Update(XMMATRIX& matView, XMMATRIX& matProjection) {
 	}
 
 	// --定数バッファへデータ転送-- //
+	//constMapTransform->world = matWorld;
 	constMapTransform->mat = matWorld * matView * matProjection;
 
 	// --色を適用-- //

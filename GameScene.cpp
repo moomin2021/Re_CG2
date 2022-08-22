@@ -35,6 +35,9 @@ GameScene::GameScene() : marioGraph(0), reimuGraph(0) {
 
 	// --カメラクラスのインスタンス生成-- //
 	camera = new Camera();
+
+	// --平行光源クラスのインスタンス生成-- //
+	dirLight = DirectionalLight::GetInstance();
 }
 
 // --初期化処理-- //
@@ -53,6 +56,10 @@ void GameScene::Initialize() {
 	camera->eye = { 0.0f, 0.0f, -100.0f };
 	camera->up = { 0.0f, 1.0f, 0.0f };
 	camera->Initialize();
+
+	// --平行光源初期化処理-- //
+	dirLight->Initialize();
+	dirLight->vec = { 1.0f, -1.0f, 1.0f };
 }
 
 // --更新処理-- //
@@ -66,10 +73,18 @@ void GameScene::Update() {
 
 	// --オブジェクト更新処理-- //
 	object->Update(camera->matView, camera->matProjection);
+
+	// --平行光源更新処理-- //
+	dirLight->Update();
 }
 
 // --描画処理-- //
 void GameScene::Draw() {
+
+	// --平行光源描画処理-- //
+	dirLight->Draw();
+
 	// --オブジェクト描画処理-- //
-	object->DrawCube(reimuGraph);
+	object->DrawCube();
+
 }

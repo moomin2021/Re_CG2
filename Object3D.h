@@ -25,6 +25,9 @@ struct ConstBufferDataTransform
 {
 	// 3D変換行列
 	XMMATRIX mat;
+	XMMATRIX world;
+	//XMMATRIX view;
+	//XMMATRIX projection;
 };
 
 // --定数バッファに送るデータをまとめた型-- //
