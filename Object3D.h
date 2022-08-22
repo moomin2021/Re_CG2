@@ -26,6 +26,7 @@ struct ConstBufferDataTransform
 	// 3Dïœä∑çsóÒ
 	XMMATRIX mat;
 	XMMATRIX world;
+	//XMFLOAT3 transform;
 	//XMMATRIX view;
 	//XMMATRIX projection;
 };

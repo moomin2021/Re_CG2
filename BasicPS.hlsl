@@ -27,11 +27,27 @@ SamplerState smp : register(s0);// ------> 0番スロットに設定されたサンプラー
 
 float4 main(VSOutput input) : SV_TARGET
 {
-	//float4 texcolor = float4(tex.Sample(smp, input.uv));
+	float4 texcolor = float4(tex.Sample(smp, input.uv));
 
-	//return float4(texcolor.rgb, texcolor.a) * color;
+	// --点光源-- //
+	{
+		// --点光源の方向-- //
+		float3 dir = ptLightPos - input.posw;
 
-	return float4(input.normal, 1);
+		// --点光源の距離-- //
+		float len = length(dir);
+
+		// --拡散-- //
+		float colD = saturate(dot(normalize(input.norw), dir));
+
+		// --減衰-- //
+		float colA = saturate(1.0f / (attenuation.x + attenuation.y * len + attenuation.z * len * len));
+
+		// --拡散と減衰を合成する-- //
+		float col = colD * colA;
+	}
+
+	return float4(texcolor.rgb * col, texcolor.a) * color;
 }
 
 //float4 main(VSOutput input) : SV_TARGET

@@ -15,6 +15,12 @@
 // --平行光源クラス-- //
 #include "DirectionalLight.h"
 
+// --点光源クラス-- //
+#include "PointLight.h"
+
+// --ベクター-- //
+#include <vector>
+
 class GameScene {
 /// --メンバ変数-- ///
 public:
@@ -35,12 +41,16 @@ private:
 	// --平行光源クラス-- //
 	DirectionalLight* dirLight;
 
+	// --点光源クラス-- //
+	PointLight* pointLight;
+
 	// --テクスチャハンドル保存用変数-- //
 	int marioGraph;
 	int reimuGraph;
 
 	// --オブジェクトクラス-- //
-	Object* object;
+	Object* floor;
+	Object* object[2];
 
 /// --メンバ変数END-- ///
 /// --------------- ///

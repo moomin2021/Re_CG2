@@ -13,8 +13,9 @@ VSOutput main(float4 pos : POSITION, float3 normal : NORMAL, float2 uv:TEXCOORD)
 	//output.svpos = mul(output.svpos, view);
 	//output.svpos = mul(output.svpos, projection);
 	output.svpos = mul(mat, pos);
-	output.normal = normal;
+	output.posw = mul(pos, world);
+	//output.normal = normal;
 	output.uv = uv;
-	//output.norw = mul(normal, world);
+	output.norw = mul(normal, world);
 	return output;
 }

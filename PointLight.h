@@ -20,7 +20,7 @@ struct ConstBufferDataPointLight {
 	XMFLOAT3 ptLightPos;
 
 	// --光源減衰パラメータ-- //
-	XMFLOAT4 attenuation;
+	XMFLOAT3 attenuation;
 };
 
 class PointLight {
@@ -30,7 +30,7 @@ public:
 	XMFLOAT3 ptLightPos;
 
 	// --光源減衰パラメーター-- //
-	XMFLOAT4 attenuation;
+	XMFLOAT3 attenuation;
 
 private:
 	// --DirectX3Dクラス-- //

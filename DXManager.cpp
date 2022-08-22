@@ -540,7 +540,7 @@ void DXManager::Initialize(HWND hwnd, int winWidth, int winHeight) {
 	pipelineDesc.SampleDesc.Count = 1; // 1ピクセルにつき1回サンプリング
 
 	// --ルートパラメータの設定-- //
-	D3D12_ROOT_PARAMETER rootParams[4] = {};
+	D3D12_ROOT_PARAMETER rootParams[5] = {};
 
 	// --定数バッファ0番-- //
 	rootParams[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;// --> 定数のバッファビュー
@@ -565,6 +565,12 @@ void DXManager::Initialize(HWND hwnd, int winWidth, int winHeight) {
 	rootParams[3].Descriptor.ShaderRegister = 2;// ------------------> 定数バッファ番号
 	rootParams[3].Descriptor.RegisterSpace = 0;// -------------------> デフォルト値
 	rootParams[3].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;// -> 全てのシェーダーから見える
+
+	// --定数バッファ2番-- //
+	rootParams[4].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;// --> 定数のバッファビュー
+	rootParams[4].Descriptor.ShaderRegister = 3;// ------------------> 定数バッファ番号
+	rootParams[4].Descriptor.RegisterSpace = 0;// -------------------> デフォルト値
+	rootParams[4].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;// -> 全てのシェーダーから見える
 
 	// --テクスチャサンプラーの設定-- //
 	// ※テクスチャがオブジェクトに張り付くときの拡大縮小の補間方法などを指定するもの //
