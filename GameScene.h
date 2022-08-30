@@ -21,6 +21,9 @@
 // --Vector3クラス-- //
 #include "Vector3.h"
 
+// --スプライトクラス-- //
+#include "Sprite.h"
+
 class GameScene {
 /// --メンバ変数-- ///
 public:
@@ -65,6 +68,9 @@ private:
 
 	// --床オブジェクト-- //
 	Object * floor[10][10];
+
+	// --スプライト-- //
+	Sprite* sprite;
 
 /// --メンバ変数END-- ///
 /// --------------- ///

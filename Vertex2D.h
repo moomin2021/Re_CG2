@@ -11,11 +11,11 @@ using namespace DirectX;
 #include <vector>
 
 // --頂点データ-- //
-struct Vertices {
+struct Vertices2D {
 	// --XYZ座標-- //
 	XMFLOAT3 pos;
 
-	// --UV座標-- //
+	// --uv座標-- //
 	XMFLOAT2 uv;
 };
 
@@ -23,16 +23,10 @@ class Vertex2D {
 /// --メンバ変数-- ///
 public:
 	// --頂点データ-- //
-	std::vector<Vertices> vertices;
+	std::vector<Vertices2D> vertices;
 
-	// --インデックス-- //
+	// --インデックスデータ-- //
 	std::vector<uint16_t> indices;
-
-	// --頂点バッファビューの作成-- //
-	D3D12_VERTEX_BUFFER_VIEW vbView;
-
-	// --インデックスバッファビュー作成-- //
-	D3D12_INDEX_BUFFER_VIEW ibView;
 
 private:
 

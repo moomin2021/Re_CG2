@@ -15,7 +15,18 @@
 
 // --2Dオブジェクト共通設定-- //
 void DrawCommSet::DrawCommSet2D() {
+	// --パイプラインステートの設定コマンド-- //
+	DXManager::GetCommandList()->SetPipelineState(Pipeline::GetPipelineSet2D().pipelineState.Get());
 
+	// --ルートシグネチャの設定コマンド-- //
+	DXManager::GetCommandList()->SetGraphicsRootSignature(Pipeline::GetPipelineSet2D().rootSignature.Get());
+
+	// --プリミティブ形状の設定コマンド-- //
+	DXManager::GetCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST); // 線のストリップ
+
+	// --デスクリプタヒープの配列をセットするコマンド-- //
+	ID3D12DescriptorHeap* ppHeaps[] = { Texture::GetSRVHeap() };
+	DXManager::GetCommandList()->SetDescriptorHeaps(1, ppHeaps);
 }
 
 // --3Dオブジェクト共通設定-- //

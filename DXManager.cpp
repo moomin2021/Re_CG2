@@ -373,6 +373,9 @@ void DXManager::Initialize(HWND hwnd, int winWidth, int winHeight) {
 
 	// --3D用パイプライン設定-- //
 	Pipeline::PipelineGenerate3D();
+
+	// --2D用パイプライン設定-- //
+	Pipeline::PipelineGenerate2D();
 }
 
 // --グラフィックスコマンド開始-- //

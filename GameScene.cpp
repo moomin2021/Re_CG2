@@ -41,6 +41,9 @@ cameraRotaSpeed(0.05f), playerSpeed(1.0f), length(10.0f) {
 
 	// --プレイヤーオブジェクトのインスタンス生成-- //
 	player = new Object();
+
+	// --スプライトのインスタンス生成-- //
+	sprite = new Sprite();
 }
 
 // --初期化処理-- //
@@ -82,6 +85,8 @@ void GameScene::Initialize() {
 			floor[i][j]->Initialize();
 		}
 	}
+
+	sprite->Initialize();
 }
 
 // --更新処理-- //
@@ -198,4 +203,9 @@ void GameScene::Draw() {
 			floor[i][j]->DrawCube();
 		}
 	}
+
+	// --2D用の共通設定をコマンドリストに積む-- //
+	DrawCommSet::DrawCommSet2D();
+
+	sprite->Draw(marioGraph);
 }
