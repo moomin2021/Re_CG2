@@ -84,7 +84,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		gameScene->Update();
 
 		// --グラフィックスコマンドスタート-- //
-		dxMa->GraphicsCommandStart(texture->srvHeap);
+		dxMa->GraphicsCommandStart();
 
 #pragma endregion
 		/// --END-- ///

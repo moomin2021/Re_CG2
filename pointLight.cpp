@@ -46,5 +46,5 @@ void PointLight::Update() {
 
 // --•`‰æˆ—-- //
 void PointLight::Draw() {
-	dxMa->commandList->SetGraphicsRootConstantBufferView(4, constBuffPointLight->GetGPUVirtualAddress());
+	DXManager::GetCommandList()->SetGraphicsRootConstantBufferView(4, constBuffPointLight->GetGPUVirtualAddress());
 }

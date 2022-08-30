@@ -221,28 +221,28 @@ void Object::DrawCube(int textureHandle) {
 	if (shape != "Cube") CubeSetVertex();
 
 	// --SRVヒープのハンドルを-- //
-	D3D12_GPU_DESCRIPTOR_HANDLE srvGpuHandle = texture->srvHeap->GetGPUDescriptorHandleForHeapStart();
+	D3D12_GPU_DESCRIPTOR_HANDLE srvGpuHandle = Texture::GetSRVHeap()->GetGPUDescriptorHandleForHeapStart();
 
 	// --ハンドルを1つ進める-- //
 	srvGpuHandle.ptr += textureHandle;
 
 	// --2枚目を指し示すようにしたSRVのハンドルをルートパラメータ1番に設定-- //
-	dxMa->commandList->SetGraphicsRootDescriptorTable(1, srvGpuHandle);
+	DXManager::GetCommandList()->SetGraphicsRootDescriptorTable(1, srvGpuHandle);
 
 	// --定数バッファビュー（CBV）の設定コマンド-- //
-	dxMa->commandList->SetGraphicsRootConstantBufferView(0, constBuffMaterial->GetGPUVirtualAddress());
+	DXManager::GetCommandList()->SetGraphicsRootConstantBufferView(0, constBuffMaterial->GetGPUVirtualAddress());
 
 	// --頂点バッファの設定
-	dxMa->commandList->IASetVertexBuffers(0, 1, &vertex->vbView);
+	DXManager::GetCommandList()->IASetVertexBuffers(0, 1, &vertex->vbView);
 
 	// --インデックスバッファの設定
-	dxMa->commandList->IASetIndexBuffer(&vertex->ibView);
+	DXManager::GetCommandList()->IASetIndexBuffer(&vertex->ibView);
 
 	// --定数バッファビュー（CBV）の設定コマンド
-	dxMa->commandList->SetGraphicsRootConstantBufferView(2, constBuffTransform->GetGPUVirtualAddress());
+	DXManager::GetCommandList()->SetGraphicsRootConstantBufferView(2, constBuffTransform->GetGPUVirtualAddress());
 
 	// --描画コマンド
-	dxMa->commandList->DrawIndexedInstanced((UINT)vertex->indices.size(), 1, 0, 0, 0);
+	DXManager::GetCommandList()->DrawIndexedInstanced((UINT)vertex->indices.size(), 1, 0, 0, 0);
 }
 
 // --頂点データに三角形の情報を設定-- //
@@ -284,28 +284,28 @@ void Object::DrawTriangle(int textureHandle) {
 	if (shape != "Triangle") TriangleSetVertex();
 
 	// --SRVヒープのハンドルを-- //
-	D3D12_GPU_DESCRIPTOR_HANDLE srvGpuHandle = texture->srvHeap->GetGPUDescriptorHandleForHeapStart();
+	D3D12_GPU_DESCRIPTOR_HANDLE srvGpuHandle = Texture::GetSRVHeap()->GetGPUDescriptorHandleForHeapStart();
 
 	// --ハンドルを1つ進める-- //
 	srvGpuHandle.ptr += textureHandle;
 
 	// --2枚目を指し示すようにしたSRVのハンドルをルートパラメータ1番に設定-- //
-	dxMa->commandList->SetGraphicsRootDescriptorTable(1, srvGpuHandle);
+	DXManager::GetCommandList()->SetGraphicsRootDescriptorTable(1, srvGpuHandle);
 
 	// --定数バッファビュー（CBV）の設定コマンド-- //
-	dxMa->commandList->SetGraphicsRootConstantBufferView(0, constBuffMaterial->GetGPUVirtualAddress());
+	DXManager::GetCommandList()->SetGraphicsRootConstantBufferView(0, constBuffMaterial->GetGPUVirtualAddress());
 
 	// --頂点バッファの設定
-	dxMa->commandList->IASetVertexBuffers(0, 1, &vertex->vbView);
+	DXManager::GetCommandList()->IASetVertexBuffers(0, 1, &vertex->vbView);
 
 	// --インデックスバッファの設定
-	dxMa->commandList->IASetIndexBuffer(&vertex->ibView);
+	DXManager::GetCommandList()->IASetIndexBuffer(&vertex->ibView);
 
 	// --定数バッファビュー（CBV）の設定コマンド
-	dxMa->commandList->SetGraphicsRootConstantBufferView(2, constBuffTransform->GetGPUVirtualAddress());
+	DXManager::GetCommandList()->SetGraphicsRootConstantBufferView(2, constBuffTransform->GetGPUVirtualAddress());
 
 	// --描画コマンド
-	dxMa->commandList->DrawIndexedInstanced((UINT)vertex->indices.size(), 1, 0, 0, 0);
+	DXManager::GetCommandList()->DrawIndexedInstanced((UINT)vertex->indices.size(), 1, 0, 0, 0);
 }
 
 // --頂点データに線の情報を設定-- //
@@ -346,26 +346,26 @@ void Object::DrawLine(int textureHandle) {
 	if (shape != "Line") TriangleSetVertex();
 
 	// --SRVヒープのハンドルを-- //
-	D3D12_GPU_DESCRIPTOR_HANDLE srvGpuHandle = texture->srvHeap->GetGPUDescriptorHandleForHeapStart();
+	D3D12_GPU_DESCRIPTOR_HANDLE srvGpuHandle = Texture::GetSRVHeap()->GetGPUDescriptorHandleForHeapStart();
 
 	// --ハンドルを1つ進める-- //
 	srvGpuHandle.ptr += textureHandle;
 
 	// --2枚目を指し示すようにしたSRVのハンドルをルートパラメータ1番に設定-- //
-	dxMa->commandList->SetGraphicsRootDescriptorTable(1, srvGpuHandle);
+	DXManager::GetCommandList()->SetGraphicsRootDescriptorTable(1, srvGpuHandle);
 
 	// --定数バッファビュー（CBV）の設定コマンド-- //
-	dxMa->commandList->SetGraphicsRootConstantBufferView(0, constBuffMaterial->GetGPUVirtualAddress());
+	DXManager::GetCommandList()->SetGraphicsRootConstantBufferView(0, constBuffMaterial->GetGPUVirtualAddress());
 
 	// --頂点バッファの設定
-	dxMa->commandList->IASetVertexBuffers(0, 1, &vertex->vbView);
+	DXManager::GetCommandList()->IASetVertexBuffers(0, 1, &vertex->vbView);
 
 	// --インデックスバッファの設定
-	dxMa->commandList->IASetIndexBuffer(&vertex->ibView);
+	DXManager::GetCommandList()->IASetIndexBuffer(&vertex->ibView);
 
 	// --定数バッファビュー（CBV）の設定コマンド
-	dxMa->commandList->SetGraphicsRootConstantBufferView(2, constBuffTransform->GetGPUVirtualAddress());
+	DXManager::GetCommandList()->SetGraphicsRootConstantBufferView(2, constBuffTransform->GetGPUVirtualAddress());
 
 	// --描画コマンド
-	dxMa->commandList->DrawIndexedInstanced((UINT)vertex->indices.size(), 1, 0, 0, 0);
+	DXManager::GetCommandList()->DrawIndexedInstanced((UINT)vertex->indices.size(), 1, 0, 0, 0);
 }

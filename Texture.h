@@ -18,8 +18,6 @@ using namespace Microsoft::WRL;
 class Texture {
 ///  --メンバ変数-- ///
 public:
-	// --SRV用デスクリプタヒープ-- //
-	ID3D12DescriptorHeap* srvHeap;
 
 private:
 	// --インスタンス-- //
@@ -33,6 +31,9 @@ private:
 
 	// --読み込む画像が何枚目か-- //
 	UINT imageCount;
+
+	// --SRV用デスクリプタヒープ-- //
+	static ID3D12DescriptorHeap* srvHeap;
 
 /// --メンバ変数END-- ///
 ///---------------- ///
@@ -49,6 +50,9 @@ public:
 
 	// --テクスチャの読み込み-- //
 	int LoadTexture(const wchar_t* szFile);
+
+	// --SRVヒープ参照-- //
+	static ID3D12DescriptorHeap* GetSRVHeap();
 
 private:
 	// --コンストラクタ-- //

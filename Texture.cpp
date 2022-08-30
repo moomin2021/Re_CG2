@@ -3,6 +3,8 @@
 // --インスタンスにNULLを代入-- //
 Texture * Texture::myInstance = nullptr;
 
+ID3D12DescriptorHeap* Texture::srvHeap = nullptr;
+
 
 // --インスタンス読み込み-- //
 Texture* Texture::GetInstance() {
@@ -24,7 +26,7 @@ void Texture::Relese() {
 }
 
 // --コンストラクタ-- //
-Texture::Texture() : device(nullptr), srvHeap(nullptr), srvHandle{}, imageCount(0) {}
+Texture::Texture() : device(nullptr), srvHandle{}, imageCount(0) {}
 
 // --初期化処理-- //
 void Texture::Initialize(ID3D12Device* device) {
@@ -215,3 +217,6 @@ int Texture::LoadTexture(const wchar_t* szFile) {
 	// --ハンドルを返す-- //
 	return descriptorSize * imageCount;
 }
+
+// --SRVヒープ参照-- //
+ID3D12DescriptorHeap* Texture::GetSRVHeap() { return srvHeap; }

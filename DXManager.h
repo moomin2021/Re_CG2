@@ -31,7 +31,6 @@ public:
 	ComPtr<IDXGIFactory7> dxgiFactory;
 	ComPtr<IDXGISwapChain4> swapChain;
 	ComPtr<ID3D12CommandAllocator> cmdAllocator;
-	ID3D12GraphicsCommandList* commandList;
 	ComPtr<ID3D12CommandQueue> commandQueue;
 	ComPtr<ID3D12DescriptorHeap> rtvHeap;
 
@@ -56,11 +55,8 @@ private:
 	// --デバイス用-- //
 	static ComPtr<ID3D12Device> device;
 
-	//// --ルートシグネチャ-- //
-	//ComPtr<ID3D12RootSignature> rootSignature;
-
-	//// --パイプラインステート-- //
-	//ID3D12PipelineState* pipelineState;
+	// --コマンドリスト-- //
+	static ID3D12GraphicsCommandList* commandList;
 
 	// --ウィンドウサイズ保存用変数-- //
 	int winWidth, winHeight;
@@ -79,13 +75,16 @@ public:
 	void Initialize(HWND hwnd, int winWidth, int winHeight);
 
 	// --グラフィックスコマンド開始-- //
-	void GraphicsCommandStart(ID3D12DescriptorHeap* srvHeap);
+	void GraphicsCommandStart();
 
 	// --グラフィックスコマンド終了-- //
 	void GraphicsCommandEnd();
 
 	// --デバイスを参照-- //
 	static ID3D12Device* GetDevice();
+
+	// --コマンドリストを参照-- //
+	static ID3D12GraphicsCommandList* GetCommandList();
 
 private:
 	// --コンストラクタ-- //

@@ -67,5 +67,5 @@ void DirectionalLight::Update() {
 
 // --•`‰æˆ—-- //
 void DirectionalLight::Draw() {
-	dxMa->commandList->SetGraphicsRootConstantBufferView(3, constBuffDirLight->GetGPUVirtualAddress());
+	DXManager::GetCommandList()->SetGraphicsRootConstantBufferView(3, constBuffDirLight->GetGPUVirtualAddress());
 }

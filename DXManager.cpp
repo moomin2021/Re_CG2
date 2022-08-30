@@ -9,9 +9,11 @@ DXManager* DXManager::myInstance = nullptr;
 // --デバイス-- //
 ComPtr<ID3D12Device> DXManager::device = nullptr;
 
+ID3D12GraphicsCommandList* DXManager::commandList = nullptr;
+
 // --コンストラクタ-- //
 DXManager::DXManager() : dxgiFactory(nullptr), swapChain(nullptr),
-cmdAllocator(nullptr), commandList(nullptr), commandQueue(nullptr), rtvHeap(nullptr),
+cmdAllocator(nullptr), commandQueue(nullptr), rtvHeap(nullptr),
 backBuffers{}, fence(nullptr), fenceVal(0), barrierDesc{}, dsvHeap(nullptr) {}
 
 // --インスタンス読み込み-- //
@@ -374,7 +376,7 @@ void DXManager::Initialize(HWND hwnd, int winWidth, int winHeight) {
 }
 
 // --グラフィックスコマンド開始-- //
-void DXManager::GraphicsCommandStart(ID3D12DescriptorHeap* srvHeap) {
+void DXManager::GraphicsCommandStart() {
 	HRESULT result;
 
 	/// --1.リソースバリアで書き込み可能に変更-- ///
@@ -447,19 +449,6 @@ void DXManager::GraphicsCommandStart(ID3D12DescriptorHeap* srvHeap) {
 	// --シザー矩形設定コマンドを、コマンドリストに積む-- //
 	commandList->RSSetScissorRects(1, &scissorRect);
 
-	// --パイプラインステートとルートシグネチャの設定コマンド-- //
-	commandList->SetPipelineState(Pipeline::GetPipelineSet3D().pipelineState.Get());
-	commandList->SetGraphicsRootSignature(Pipeline::GetPipelineSet3D().rootSignature.Get());
-
-	// --プリミティブ形状の設定コマンド-- //
-	commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_LINESTRIP); // 線のストリップ
-
-	// --プリミティブ形状の設定コマンド-- //
-	commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST); // 三角形リスト
-
-	// --SRVヒープの設定コマンド-- //
-	commandList->SetDescriptorHeaps(1, &srvHeap);
-
 #pragma endregion
 	/// --END-- ///
 }
@@ -517,3 +506,6 @@ void DXManager::GraphicsCommandEnd() {
 
 // --デバイスを参照-- //
 ID3D12Device* DXManager::GetDevice() { return device.Get(); }
+
+// --コマンドリストを参照-- //
+ID3D12GraphicsCommandList* DXManager::GetCommandList() { return commandList; }

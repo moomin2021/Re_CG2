@@ -1,5 +1,7 @@
 #include "GameScene.h"
 
+#include "DrawCommSet.h"
+
 // --インスタンスにNULLを代入-- //
 GameScene* GameScene::myInstance = nullptr;
 
@@ -180,6 +182,9 @@ void GameScene::Update() {
 
 // --描画処理-- //
 void GameScene::Draw() {
+
+	// --3D用の共通設定をコマンドリストに積む-- //
+	DrawCommSet::DrawCommSet3D();
 
 	// --点光源描画処理-- //
 	pointLight->Draw();
