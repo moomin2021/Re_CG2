@@ -11,8 +11,8 @@ using namespace DirectX;
 #include <wrl.h>
 using namespace Microsoft::WRL;
 
-// --頂点クラス-- //
-#include "Vertex.h"
+// --3D用頂点クラス-- //
+#include "Vertex3D.h"
 
 // --DirectX3Dクラス-- //
 #include "DXManager.h"
@@ -60,7 +60,7 @@ private:
 	ConstBufferDataMaterial* constMapMaterial;
 
 	// --頂点データ-- //
-	Vertex* vertex;
+	Vertex3D* vertex;
 
 	// --オブジェクトの形-- //
 	const char* shape;

@@ -1,12 +1,15 @@
-#include "Vertex.h"
+#include "Vertex2D.h"
+
+// --DirectX3Dクラス-- //
+#include "DXManager.h"
 
 // --コンストラクタ-- //
-Vertex::Vertex() {
+Vertex2D::Vertex2D() {
 
 }
 
 // --初期化処理-- //
-void Vertex::Initialize(ID3D12Device* device) {
+void Vertex2D::Initialize() {
 	// --関数が成功したかどうかを判別する用変数-- //
 	// ※DirectXの関数は、HRESULT型で成功したかどうかを返すものが多いのでこの変数を作成 //
 	HRESULT result;
@@ -33,7 +36,7 @@ void Vertex::Initialize(ID3D12Device* device) {
 
 	// --頂点バッファの生成-- //
 	ID3D12Resource* vertBuff = nullptr;
-	result = device->CreateCommittedResource(
+	result = DXManager::GetDevice()->CreateCommittedResource(
 		&heapProp, // ヒープ設定
 		D3D12_HEAP_FLAG_NONE,
 		&resDesc, // リソース設定
@@ -41,39 +44,6 @@ void Vertex::Initialize(ID3D12Device* device) {
 		nullptr,
 		IID_PPV_ARGS(&vertBuff));
 	assert(SUCCEEDED(result));
-
-#pragma endregion
-	/// --END-- ///
-
-	/// --法線の計算-- ///
-#pragma region
-
-	for (size_t i = 0; i < indices.size() / 3; i++) {
-		// --三角形のインデックスを取り出して、一時的な変数に入れる
-		unsigned short index0 = indices[i * 3 + 0];
-		unsigned short index1 = indices[i * 3 + 1];
-		unsigned short index2 = indices[i * 3 + 2];
-
-		// --三角形を構成する頂点座標をベクトルに代入
-		XMVECTOR p0 = XMLoadFloat3(&vertices[index0].pos);
-		XMVECTOR p1 = XMLoadFloat3(&vertices[index1].pos);
-		XMVECTOR p2 = XMLoadFloat3(&vertices[index2].pos);
-
-		// --p0->p1ベクトル、p0->p2ベクトルを計算（ベクトルの減算）
-		XMVECTOR v1 = XMVectorSubtract(p1, p0);
-		XMVECTOR v2 = XMVectorSubtract(p2, p0);
-
-		// --外積は両方から垂直なベクトル
-		XMVECTOR normal = XMVector3Cross(v1, v2);
-
-		// --正規化
-		normal = XMVector3Normalize(normal);
-
-		// --求めた法線を頂点データに代入
-		XMStoreFloat3(&vertices[index0].normal, normal);
-		XMStoreFloat3(&vertices[index1].normal, normal);
-		XMStoreFloat3(&vertices[index2].normal, normal);
-	}
 
 #pragma endregion
 	/// --END-- ///
@@ -129,7 +99,7 @@ void Vertex::Initialize(ID3D12Device* device) {
 
 	// --インデックスバッファの生成-- //
 	ID3D12Resource* indexBuff = nullptr;
-	result = device->CreateCommittedResource(
+	result = DXManager::GetDevice()->CreateCommittedResource(
 		&heapProp,// -> ヒープ設定
 		D3D12_HEAP_FLAG_NONE,
 		&resDesc,// -> リソース設定

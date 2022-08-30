@@ -16,7 +16,7 @@ Object::~Object() {}
 void Object::Initialize() {
 
 	// --頂点クラス-- //
-	vertex = new Vertex();
+	vertex = new Vertex3D();
 
 	// --DirectX3Dクラス-- //
 	dxMa = DXManager::GetInstance();

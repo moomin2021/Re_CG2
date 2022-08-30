@@ -23,7 +23,7 @@ struct Vertices {
 	XMFLOAT2 uv;
 };
 
-class Vertex {
+class Vertex3D {
 public:
 	// --頂点データ-- //
 	std::vector<Vertices> vertices;
@@ -39,7 +39,7 @@ public:
 
 public:
 	// --コンストラクタ-- //
-	Vertex();
+	Vertex3D();
 
 	// --初期化処理-- //
 	void Initialize(ID3D12Device * device);

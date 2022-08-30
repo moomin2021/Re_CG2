@@ -54,13 +54,13 @@ private:
 	static DXManager* myInstance;
 
 	// --デバイス用-- //
-	ComPtr<ID3D12Device> device;
+	static ComPtr<ID3D12Device> device;
 
-	// --ルートシグネチャ-- //
-	ComPtr<ID3D12RootSignature> rootSignature;
+	//// --ルートシグネチャ-- //
+	//ComPtr<ID3D12RootSignature> rootSignature;
 
-	// --パイプラインステート-- //
-	ID3D12PipelineState* pipelineState;
+	//// --パイプラインステート-- //
+	//ID3D12PipelineState* pipelineState;
 
 	// --ウィンドウサイズ保存用変数-- //
 	int winWidth, winHeight;
@@ -85,7 +85,7 @@ public:
 	void GraphicsCommandEnd();
 
 	// --デバイスを参照-- //
-	ID3D12Device* GetDevice();
+	static ID3D12Device* GetDevice();
 
 private:
 	// --コンストラクタ-- //

@@ -39,9 +39,6 @@ cameraRotaSpeed(0.05f), playerSpeed(1.0f), length(10.0f) {
 
 	// --プレイヤーオブジェクトのインスタンス生成-- //
 	player = new Object();
-
-	// --ライトオブジェクト-- //
-	lightObject = new Object();
 }
 
 // --初期化処理-- //
@@ -83,9 +80,6 @@ void GameScene::Initialize() {
 			floor[i][j]->Initialize();
 		}
 	}
-
-	lightObject->scale = { 0.3f, 0.3f, 0.3f };
-	lightObject->Initialize();
 }
 
 // --更新処理-- //
@@ -177,10 +171,6 @@ void GameScene::Update() {
 
 	pointLight->ptLightPos = player->position;
 
-	lightObject->position = pointLight->ptLightPos;
-
-	lightObject->Update(camera->matView, camera->matProjection);
-
 	// --カメラ更新処理-- //
 	camera->Update();
 
@@ -196,8 +186,6 @@ void GameScene::Draw() {
 
 	// --プレイヤー描画処理-- //
 	//player->DrawCube();
-
-	lightObject->DrawCube();
 
 	// --床オブジェクト描画-- //
 	for (size_t i = 0; i < 10; i++) {
