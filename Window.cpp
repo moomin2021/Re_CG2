@@ -20,8 +20,11 @@ LRESULT WindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 // --インスタンスにNULLを代入-- //
 Window* Window::myInstance = nullptr;
 
+int Window::windowWidth = 1280;
+int Window::windowHeight = 720;
+
 // --コンストラクタ-- //
-Window::Window() : windowWidth(1280), windowHeight(720), w{}, wrc{}, hwnd{}, msg{} {}
+Window::Window() : w{}, wrc{}, hwnd{}, msg{} {}
 
 // --インスタンス読み込み-- //
 Window* Window::GetInstance() {

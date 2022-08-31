@@ -22,8 +22,8 @@ private:
 	static Window * myInstance;
 
 	// --ウィンドウサイズ縦横-- //
-	int windowWidth;
-	int windowHeight;
+	static int windowWidth;
+	static int windowHeight;
 
 /// --メンバ変数END-- ///
 /// --------------- ///
@@ -39,8 +39,8 @@ public:
 	void Initialize();
 
 	// --ウィンドウの縦横幅を参照-- //
-	int GetWidth();
-	int GetHeight();
+	static int GetWidth();
+	static int GetHeight();
 
 	// --ウィンドウクラス参照-- //
 	WNDCLASSEX GetWNDCLASSEX();

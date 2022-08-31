@@ -43,7 +43,8 @@ cameraRotaSpeed(0.05f), playerSpeed(1.0f), length(10.0f) {
 	player = new Object();
 
 	// --スプライトのインスタンス生成-- //
-	sprite = new Sprite();
+	sprite[0] = new Sprite();
+	sprite[1] = new Sprite();
 }
 
 // --初期化処理-- //
@@ -54,6 +55,7 @@ void GameScene::Initialize() {
 	// --テクスチャの読み込み-- //
 	marioGraph = texture->LoadTexture(L"Resources/mario.jpg");
 	reimuGraph = texture->LoadTexture(L"Resources/reimu.png");
+	haeGraph = texture->LoadTexture(L"Resources/texture.png");
 
 	// --カメラの初期化処理-- //
 	camera->eye = { 0.0f, 10.0f, 0.0f };
@@ -86,7 +88,8 @@ void GameScene::Initialize() {
 		}
 	}
 
-	sprite->Initialize();
+	sprite[0]->Initialize();
+	sprite[1]->Initialize();
 }
 
 // --更新処理-- //
@@ -176,6 +179,7 @@ void GameScene::Update() {
 		}
 	}
 
+	// --ポイントライト-- //
 	pointLight->ptLightPos = player->position;
 
 	// --カメラ更新処理-- //
@@ -183,6 +187,15 @@ void GameScene::Update() {
 
 	// --点光源更新処理-- //
 	pointLight->Update();
+
+	// --スプライト更新処理-- //
+	//sprite->rotation = 45;
+	//sprite->position = { 1280 / 2, 720 / 2, 0 };
+	//sprite->color = { 1.0f, 0.0f, 0.0f, 1.0f };
+	sprite[0]->Update();
+
+	sprite[1]->position = { 100.0f, 100.0f, 0.0f };
+	sprite[1]->Update();
 }
 
 // --描画処理-- //
@@ -207,5 +220,6 @@ void GameScene::Draw() {
 	// --2D用の共通設定をコマンドリストに積む-- //
 	DrawCommSet::DrawCommSet2D();
 
-	sprite->Draw(marioGraph);
+	sprite[0]->Draw(marioGraph);
+	sprite[1]->Draw(reimuGraph);
 }

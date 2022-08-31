@@ -133,7 +133,7 @@ void Pipeline::PipelineGenerate2D() {
 	blenddesc.RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
 
 	// --アルファ値共通設定-- //
-	blenddesc.BlendEnable = false;// ----------------> ブレンドを有効する
+	blenddesc.BlendEnable = true;// ----------------> ブレンドを有効する
 	blenddesc.BlendOpAlpha = D3D12_BLEND_OP_ADD;// -> 加算
 	blenddesc.SrcBlendAlpha = D3D12_BLEND_ONE;// ---> ソースの値を100%使う
 	blenddesc.DestBlendAlpha = D3D12_BLEND_ZERO;// -> デストの値を0%使う

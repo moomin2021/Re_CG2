@@ -14,11 +14,31 @@ using namespace DirectX;
 struct ConstBufferData {
 	// --色（RBGA）-- //
 	XMFLOAT4 color;
+
+	// --行列-- //
+	XMMATRIX mat;
 };
 
 class Sprite {
 /// --メンバ変数-- ///
 public:
+	// --Z軸回りの回転角-- //
+	float rotation;
+
+	// --座標-- //
+	XMFLOAT3 position;
+
+	// --ワールド行列-- //
+	XMMATRIX matWorld;
+
+	// --射影変換行列-- //
+	XMMATRIX matProjection;
+
+	// --色（RBGA）-- //
+	XMFLOAT4 color;
+
+	// --スケール-- //
+	XMFLOAT2 scale;
 
 private:
 	// --頂点データ-- //
@@ -29,6 +49,12 @@ private:
 
 	// --頂点バッファビュー-- //
 	D3D12_VERTEX_BUFFER_VIEW vbView;
+
+	// --頂点バッファ-- //
+	ID3D12Resource* vertBuff;
+
+	// --頂点バッファマッピング処理用-- //
+	Vertices2D* vertMap;
 
 	// --インデックスバッファビュー-- //
 	D3D12_INDEX_BUFFER_VIEW ibView;
@@ -48,6 +74,9 @@ public:
 
 	// --初期化処理-- //
 	void Initialize();
+
+	// --更新処理-- //
+	void Update();
 
 	// --描画処理-- //
 	void Draw(int textureHandle = 0);

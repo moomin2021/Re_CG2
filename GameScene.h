@@ -47,6 +47,7 @@ private:
 	// --テクスチャハンドル保存用変数-- //
 	int marioGraph;
 	int reimuGraph;
+	int haeGraph;
 
 	// --プレイヤーオブジェクト-- //
 	Object* player;
@@ -70,7 +71,7 @@ private:
 	Object * floor[10][10];
 
 	// --スプライト-- //
-	Sprite* sprite;
+	Sprite* sprite[2];
 
 /// --メンバ変数END-- ///
 /// --------------- ///

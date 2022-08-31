@@ -3,13 +3,15 @@
 // --DirectX3Dクラス-- //
 #include "DXManager.h"
 
+// --Windowクラス-- //
+#include "Window.h"
+
 // --テクスチャクラス-- //
 #include "Texture.h"
 
 // --コンストラクタ-- //
-Sprite::Sprite() : vbView{}, ibView{}, constBuff(nullptr), constMap(nullptr) {
-
-}
+Sprite::Sprite() : vbView{}, ibView{}, constBuff(nullptr), constMap(nullptr), vertBuff(nullptr), vertMap(nullptr),
+	color{1.0f, 1.0f, 1.0f, 1.0f}, scale{1.0f, 1.0f} {}
 
 // --初期化処理-- //
 void Sprite::Initialize() {
@@ -18,10 +20,10 @@ void Sprite::Initialize() {
 	HRESULT result;
 
 	// --頂点データ-- //
-	vertices[0] = { { -0.5f, -0.5f, 0.0f }, {0.0f, 1.0f} };// -> 左下
-	vertices[1] = { { -0.5f, +0.5f, 0.0f }, {0.0f, 0.0f} };// -> 左上
-	vertices[2] = { { +0.5f, -0.5f, 0.0f }, {1.0f, 1.0f} };// -> 右下
-	vertices[3] = { { +0.5f, +0.5f, 0.0f }, {1.0f, 0.0f} };// -> 右上
+	vertices[0] = { {   0.0f, 100.0f * scale.y, 0.0f }, {0.0f, 1.0f} };// -> 左下
+	vertices[1] = { {   0.0f,   0.0f, 0.0f }, {0.0f, 0.0f} };// -> 左上
+	vertices[2] = { { 100.0f * scale.x, 100.0f * scale.y, 0.0f }, {1.0f, 1.0f} };// -> 右下
+	vertices[3] = { { 100.0f * scale.x,   0.0f, 0.0f }, {1.0f, 0.0f} };// -> 右上
 
 	indices[0] = 0;
 	indices[1] = 1;
@@ -51,7 +53,6 @@ void Sprite::Initialize() {
 	resDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
 
 	// --頂点バッファの生成-- //
-	ID3D12Resource* vertBuff = nullptr;
 	result = DXManager::GetDevice()->CreateCommittedResource(
 		&heapVSProp, // ヒープ設定
 		D3D12_HEAP_FLAG_NONE,
@@ -71,7 +72,6 @@ void Sprite::Initialize() {
 	//Vertices* vertMap = nullptr;
 
 	// --Map処理でメインメモリとGPUのメモリを紐づける-- //
-	Vertices2D* vertMap;
 	result = vertBuff->Map(0, nullptr, (void**)&vertMap);
 	assert(SUCCEEDED(result));
 
@@ -80,9 +80,6 @@ void Sprite::Initialize() {
 	{
 		vertMap[i] = vertices[i]; // 座標をコピー
 	}
-
-	// --繋がりを解除-- //
-	vertBuff->Unmap(0, nullptr);
 
 #pragma endregion
 	/// --END-- ///
@@ -174,20 +171,54 @@ void Sprite::Initialize() {
 	assert(SUCCEEDED(result));
 
 	// --スプライトの色を変える-- //
-	constMap->color = XMFLOAT4(1.0f, 0.0f, 0.0f, 0.1f);
+	constMap->color = color;
+
+	// --平行投影行列-- //
+	matProjection = XMMatrixOrthographicOffCenterLH(
+		0.0f, (float)Window::GetWidth(), (float)Window::GetHeight(), 0.0f, 0.0f, 1.0f);
+
+	// --行列初期化-- //
+	constMap->mat = XMMatrixIdentity();
 
 #pragma endregion
 
 }
 
+// --更新処理-- //
+void Sprite::Update() {
+	// --ワールド行列更新-- //
+	matWorld = XMMatrixIdentity();
+
+	// --Z軸回転-- //
+	matWorld *= XMMatrixRotationZ(XMConvertToRadians(rotation));
+
+	// --平行移動-- //
+	matWorld *= XMMatrixTranslation(position.x, position.y, position.z);
+
+	// --定数バッファの転送-- //
+
+	// --行列計算-- //
+	constMap->mat = matWorld * matProjection;
+
+	// --色適用-- //
+	constMap->color = color;
+
+	// --頂点バッファ転送-- //
+	// --頂点データ-- //
+	vertices[0] = { {   0.0f, 100.0f * scale.y, 0.0f }, {0.0f, 1.0f} };// -> 左下
+	vertices[1] = { {   0.0f,   0.0f, 0.0f }, {0.0f, 0.0f} };// -> 左上
+	vertices[2] = { { 100.0f * scale.x, 100.0f * scale.y, 0.0f }, {1.0f, 1.0f} };// -> 右下
+	vertices[3] = { { 100.0f * scale.x,   0.0f, 0.0f }, {1.0f, 0.0f} };// -> 右上
+
+	// --全頂点に対して-- //
+	for (int i = 0; i < _countof(vertices); i++)
+	{
+		vertMap[i] = vertices[i]; // 座標をコピー
+	}
+}
+
 // --描画処理-- //
 void Sprite::Draw(int textureHandle) {
-	// --頂点バッファビューの設定コマンド-- //
-	DXManager::GetCommandList()->IASetVertexBuffers(0, 1, &vbView);
-
-	// --定数バッファビュー（CBV）の設定コマンド-- //
-	DXManager::GetCommandList()->SetGraphicsRootConstantBufferView(0, constBuff->GetGPUVirtualAddress());
-
 	// --SRVヒープのハンドルを取得-- //
 	D3D12_GPU_DESCRIPTOR_HANDLE srvGpuHandle = Texture::GetSRVHeap()->GetGPUDescriptorHandleForHeapStart();
 
@@ -196,6 +227,12 @@ void Sprite::Draw(int textureHandle) {
 
 	// --指定されたSRVをルートパラメータ1番に設定-- //
 	DXManager::GetCommandList()->SetGraphicsRootDescriptorTable(1, srvGpuHandle);
+
+	// --頂点バッファビューの設定コマンド-- //
+	DXManager::GetCommandList()->IASetVertexBuffers(0, 1, &vbView);
+
+	// --定数バッファビュー（CBV）の設定コマンド-- //
+	DXManager::GetCommandList()->SetGraphicsRootConstantBufferView(0, constBuff->GetGPUVirtualAddress());
 
 	// --インデックスバッファビューの設定コマンド-- //
 	DXManager::GetCommandList()->IASetIndexBuffer(&ibView);
