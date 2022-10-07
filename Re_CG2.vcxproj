@@ -71,7 +71,8 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>$(solutionDir)DirectXTex;$(IncludePath)</IncludePath>
+    <IncludePath>C:\Program Files\Autodesk\FBX\FBX SDK\2020.3.1\include;$(solutionDir)DirectXTex;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\Program Files\Autodesk\FBX\FBX SDK\2020.3.1\lib\vs2019\x64\debug;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <IncludePath>$(solutionDir)DirectXTex;$(IncludePath)</IncludePath>
@@ -114,6 +115,7 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>libfbxsdk.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -137,6 +139,7 @@
     <ClCompile Include="Camera.cpp" />
     <ClCompile Include="DirectionalLight.cpp" />
     <ClCompile Include="DrawCommSet.cpp" />
+    <ClCompile Include="FBX.cpp" />
     <ClCompile Include="GameScene.cpp" />
     <ClCompile Include="Object3D.cpp" />
     <ClCompile Include="DXManager.cpp" />
@@ -183,6 +186,7 @@
     <ClInclude Include="Camera.h" />
     <ClInclude Include="DirectionalLight.h" />
     <ClInclude Include="DrawCommSet.h" />
+    <ClInclude Include="FBX.h" />
     <ClInclude Include="GameScene.h" />
     <ClInclude Include="Object3D.h" />
     <ClInclude Include="DXManager.h" />

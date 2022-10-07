@@ -105,6 +105,9 @@
     <ClCompile Include="DrawCommSet.cpp">
       <Filter>ソース ファイル\base</Filter>
     </ClCompile>
+    <ClCompile Include="FBX.cpp">
+      <Filter>ソース ファイル\3d</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="BasicVS.hlsl" />
@@ -163,6 +166,9 @@
     </ClInclude>
     <ClInclude Include="DrawCommSet.h">
       <Filter>ヘッダー ファイル\base</Filter>
+    </ClInclude>
+    <ClInclude Include="FBX.h">
+      <Filter>ヘッダー ファイル\3d</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

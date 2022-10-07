@@ -24,6 +24,9 @@
 // --スプライトクラス-- //
 #include "Sprite.h"
 
+// --FBXクラス-- //
+#include "FBX.h"
+
 class GameScene {
 /// --メンバ変数-- ///
 public:
@@ -72,6 +75,11 @@ private:
 
 	// --スプライト-- //
 	Sprite* sprite[2];
+
+	// --FBX-- //
+	FBX* fbx;
+
+	bool isActive;
 
 /// --メンバ変数END-- ///
 /// --------------- ///

@@ -26,7 +26,7 @@ void GameScene::Relese() {
 
 // --コンストラクタ-- //
 GameScene::GameScene() : marioGraph(0), reimuGraph(0), angleX(0.0f), angleY(90.0f), forwardVec{},
-cameraRotaSpeed(0.05f), playerSpeed(1.0f), length(10.0f) {
+cameraRotaSpeed(0.05f), playerSpeed(1.0f), length(10.0f), isActive(false) {
 	// --入力クラスのインスタンス取得-- //
 	input = Input::GetInstance();
 
@@ -45,6 +45,9 @@ cameraRotaSpeed(0.05f), playerSpeed(1.0f), length(10.0f) {
 	// --スプライトのインスタンス生成-- //
 	sprite[0] = new Sprite();
 	sprite[1] = new Sprite();
+
+	// --FBXクラスインスタンス生成-- //
+	fbx = new FBX();
 }
 
 // --初期化処理-- //
@@ -90,6 +93,10 @@ void GameScene::Initialize() {
 
 	sprite[0]->Initialize();
 	sprite[1]->Initialize();
+
+	//isActive = fbx->Load("Resources/Sheriff.fbx");
+	isActive = fbx->Load("Resources/Cube.fbx");
+	fbx->Initialize();
 }
 
 // --更新処理-- //
@@ -159,9 +166,7 @@ void GameScene::Update() {
 		if (input->PushKey(DIK_LSHIFT)) playerSpeed = 1.7f;
 		else playerSpeed = 1.0f;
 
-		//camera->eye.y += input->PushKey(DIK_UP) - input->PushKey(DIK_DOWN);
-		pointLight->ptLightPos.x += input->PushKey(DIK_RIGHT) - input->PushKey(DIK_LEFT);
-		pointLight->ptLightPos.z += input->PushKey(DIK_UP) - input->PushKey(DIK_DOWN);
+		camera->eye.y += input->PushKey(DIK_UP) - input->PushKey(DIK_DOWN);
 
 		// --注視点を変更
 		camera->target.x = camera->eye.x + cosf(Util::Degree2Radian(angleX)) * length;
@@ -196,6 +201,8 @@ void GameScene::Update() {
 
 	sprite[1]->position = { 100.0f, 100.0f, 0.0f };
 	sprite[1]->Update();
+
+	fbx->Update(camera->matView, camera->matProjection);
 }
 
 // --描画処理-- //
@@ -217,9 +224,13 @@ void GameScene::Draw() {
 		}
 	}
 
+	fbx->Draw();
+
 	// --2D用の共通設定をコマンドリストに積む-- //
 	DrawCommSet::DrawCommSet2D();
 
-	sprite[0]->Draw(marioGraph);
-	sprite[1]->Draw(reimuGraph);
+	if (isActive) {
+		sprite[0]->Draw(marioGraph);
+		sprite[1]->Draw(reimuGraph);
+	}
 }
