@@ -24,8 +24,7 @@
 // --スプライトクラス-- //
 #include "Sprite.h"
 
-// --FBXクラス-- //
-#include "FBX.h"
+#include <memory>
 
 class GameScene {
 /// --メンバ変数-- ///
@@ -43,9 +42,6 @@ private:
 
 	// --カメラクラス-- //
 	Camera* camera;
-
-	// --点光源クラス-- //
-	PointLight* pointLight;
 
 	// --テクスチャハンドル保存用変数-- //
 	int marioGraph;
@@ -69,15 +65,6 @@ private:
 
 	// --カメラと注視点の距離-- //
 	float length;
-
-	// --床オブジェクト-- //
-	Object * floor[10][10];
-
-	// --スプライト-- //
-	Sprite* sprite[2];
-
-	// --FBX-- //
-	FBX* fbx;
 
 	bool isActive;
 

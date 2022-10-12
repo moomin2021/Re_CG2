@@ -36,18 +36,8 @@ cameraRotaSpeed(0.05f), playerSpeed(1.0f), length(10.0f), isActive(false) {
 	// --カメラクラスのインスタンス生成-- //
 	camera = new Camera();
 
-	// --点光源クラスのインスタンス生成-- //
-	pointLight = new PointLight();
-
 	// --プレイヤーオブジェクトのインスタンス生成-- //
 	player = new Object();
-
-	// --スプライトのインスタンス生成-- //
-	sprite[0] = new Sprite();
-	sprite[1] = new Sprite();
-
-	// --FBXクラスインスタンス生成-- //
-	fbx = new FBX();
 }
 
 // --初期化処理-- //
@@ -65,38 +55,11 @@ void GameScene::Initialize() {
 	camera->up = { 0.0f, 1.0f, 0.0f };
 	camera->Initialize();
 
-	// --点光源-- //
-	pointLight->Initialize();
-	pointLight->ptLightPos = { 0.0f, 10.0f, 0.0f };
-	pointLight->attenuation = { 100.0f, 0.0f, 2.0f };
-
 	// --プレイヤーオブジェクト初期化処理-- //
 	player->position = { 0.0f, 10.0f, 0.0f };
 	player->scale = { 1.0f, 2.0f, 1.0f };
 	player->rotation = { 0.0f, 0.0f, 0.0f };
 	player->Initialize();
-
-	for (size_t i = 0; i < 10; i++) {
-		for (size_t j = 0; j < 10; j++) {
-			floor[i][j] = new Object();
-			floor[i][j]->position = { 100.0f * i - 450.0f, 0.0f, 100.0f * j - 450.0f };
-			floor[i][j]->scale = { 10.0f, 0.05f, 10.0f };
-			if (i % 2 == 0) {
-				if (j % 2 == 1) floor[i][j]->color = { 0.1f, 0.1f, 0.1f, 1.0f };
-			}
-			else {
-				if (j % 2 == 0) floor[i][j]->color = { 0.1f, 0.1f, 0.1f, 1.0f };
-			}
-			floor[i][j]->Initialize();
-		}
-	}
-
-	sprite[0]->Initialize();
-	sprite[1]->Initialize();
-
-	//isActive = fbx->Load("Resources/Sheriff.fbx");
-	isActive = fbx->Load("Resources/Cube.fbx");
-	fbx->Initialize();
 }
 
 // --更新処理-- //
@@ -177,32 +140,8 @@ void GameScene::Update() {
 	// --プレイヤー更新処理-- //
 	player->Update(camera->matView, camera->matProjection);
 
-	// --床オブジェクト更新処理-- //
-	for (size_t i = 0; i < 10; i++) {
-		for (size_t j = 0; j < 10; j++) {
-			floor[i][j]->Update(camera->matView, camera->matProjection);
-		}
-	}
-
-	// --ポイントライト-- //
-	pointLight->ptLightPos = player->position;
-
 	// --カメラ更新処理-- //
 	camera->Update();
-
-	// --点光源更新処理-- //
-	pointLight->Update();
-
-	// --スプライト更新処理-- //
-	//sprite->rotation = 45;
-	//sprite->position = { 1280 / 2, 720 / 2, 0 };
-	//sprite->color = { 1.0f, 0.0f, 0.0f, 1.0f };
-	sprite[0]->Update();
-
-	sprite[1]->position = { 100.0f, 100.0f, 0.0f };
-	sprite[1]->Update();
-
-	fbx->Update(camera->matView, camera->matProjection);
 }
 
 // --描画処理-- //
@@ -211,26 +150,6 @@ void GameScene::Draw() {
 	// --3D用の共通設定をコマンドリストに積む-- //
 	DrawCommSet::DrawCommSet3D();
 
-	// --点光源描画処理-- //
-	pointLight->Draw();
-
-	// --プレイヤー描画処理-- //
-	//player->DrawCube();
-
-	// --床オブジェクト描画-- //
-	for (size_t i = 0; i < 10; i++) {
-		for (size_t j = 0; j < 10; j++) {
-			floor[i][j]->DrawCube();
-		}
-	}
-
-	fbx->Draw();
-
 	// --2D用の共通設定をコマンドリストに積む-- //
 	DrawCommSet::DrawCommSet2D();
-
-	if (isActive) {
-		sprite[0]->Draw(marioGraph);
-		sprite[1]->Draw(reimuGraph);
-	}
 }
