@@ -1,5 +1,6 @@
 #pragma once
 // --DirectXInput-- //
+#define DIREXTINPUT_VERSION 0x0800// DirectInputのバージョン指定
 #include <dinput.h>
 
 // --Vector2クラス-- //
@@ -7,7 +8,6 @@
 
 // --ComPtr用-- //
 #include <wrl.h>
-using namespace Microsoft::WRL;
 
 // --WindowsAPIクラス-- //
 #include "Window.h"
@@ -22,6 +22,8 @@ class Input
 {
 /// --メンバ変数-- ///
 public:
+	// --namespaceの省略-- //
+	template <class T> using ComPtr = Microsoft::WRL::ComPtr<T>;
 
 private:
 	// --インスタンス-- //
